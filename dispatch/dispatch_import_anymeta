@@ -1,0 +1,7 @@
+[
+ {admin_import_anymeta, ["admin", "import-anymeta"], resource_admin,
+  [
+   {selected, 'admin_import_anymeta'},
+   {acl_module, mod_import_anymeta},
+   {template, "admin_import_anymeta.tpl"}]}
+].
