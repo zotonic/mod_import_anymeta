@@ -108,7 +108,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
 do_import(Host, undefined, To, Username, Password, Context) ->
     do_import(Host, 1, To, Username, Password, Context);
 do_import(Host, From, To, Username, Password, Context) ->
-    case ?DEBUG(test_host(From, Host, Username, Password, Context)) of
+    case test_host(From, Host, Username, Password, Context) of
         ok ->
             start_import(Host, From, To, Username, Password, Context);
         Err ->
@@ -227,7 +227,6 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [From]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
-            ?DEBUG({import_anymeta, 503}),
             timer:sleep(10000),
             import_loop(Host, From, To, Username, Password, Stats, Context);
         {error, not_found} ->
@@ -282,7 +281,10 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                             end
                      end,
             
-            case write_rsc(AnymetaId, Fields, Stats, Context) of
+            Fields1 = map_sections(Fields),
+            Fields2 = z_notifier:foldl(import_anymeta_fields, Fields1, Context),
+            
+            case write_rsc(AnymetaId, Fields2, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     case proplists:get_value(<<"file">>, Thing) of
@@ -379,7 +381,8 @@ map_texts(Lang, Ts) ->
             fun({F,T}, Acc) ->
                 case map_text_field(F,T) of
                     skip -> Acc;
-                    Prop -> [ Prop | Acc ]
+                    Prop when is_tuple(Prop) -> [ Prop | Acc ];
+                    Prop when is_list(Prop) -> Prop ++ Acc
                 end
             end,
             [],
@@ -393,7 +396,10 @@ map_texts(Lang, Ts) ->
     map_text_field(<<"title_short">>, T) -> {short_title, z_string:trim(z_html:strip(T))};
     map_text_field(<<"chapeau">>, T) -> {chapeau, z_string:trim(z_html:strip(T))};
     map_text_field(<<"subtitle">>, T) -> {subtitle, z_string:trim(z_html:strip(T))};
-    map_text_field(<<"intro">>, T) -> {summary, z_string:trim(z_html:strip(T))};
+    map_text_field(<<"intro">>, T) -> [
+                {summary, z_string:trim(z_html:strip(T))},
+                {summary_html, z_string:trim(T)}
+            ];
 
     % TODO: map the wiki refs to Zotonic html
     map_text_field(<<"body">>, T) ->
@@ -405,12 +411,42 @@ map_texts(Lang, Ts) ->
     map_text_field(<<"label">>, {struct, []}) -> 
         skip;
     map_text_field(<<"label">>, {struct, Ts}) -> 
-        skip;
+        Sections = lists:foldr(fun({Name, {struct, T}}, Acc) ->
+                                    Acc1 = case proplists:get_value(<<"text">>, T) of
+                                        <<>> -> Acc;
+                                        Text -> [ {{section, 0-length(Acc), Name, text}, Text} | Acc]
+                                    end,
+                                    case proplists:get_value(<<"subhead">>, T) of
+                                        <<>> -> Acc1;
+                                        SubHead -> [ {{section, 0-length(Acc1), Name, subheading}, SubHead} | Acc1]
+                                    end
+                               end,
+                               [],
+                               Ts),
+        Sections;
         %{anymeta_label, Ts};
 
     map_text_field(_Skipped, _) ->
         skip.
 
+map_sections(Fs) ->
+    case lists:partition(fun({{section, _, _, _}, _}) -> true; (_) -> false end, Fs) of
+        {[], _} ->
+            Fs;
+        {Sections, Fs1} ->
+            % Combine the sections in a hierarchical structure
+            [{sections, [
+                    case Type of
+                        subheading ->
+                            [ {type, subheading}, {text, Texts} ];
+                        text ->
+                            [ {type, text}, {name, z_convert:to_binary(z_string:to_lower(Name))}, {body, Texts} ]
+                    end
+                || {{section, _Nr, Name, Type}, Texts} <- lists:sort(Sections)
+            ]
+          } | Fs1]
+    end.
+    
 
 group_by_lang(Ts) ->
     group_by_lang(Ts, dict:new()).
@@ -566,7 +602,6 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
                     {ok, RscId} = m_rsc_update:insert(Fields, [{escape_texts, false}, is_import], Context)
             end,
-            ?DEBUG({RscId, AnymetaId, Uuid}),
             register_import(RscId, AnymetaId, Uuid, Context),
             {ok, RscId, Stats}
     end.
@@ -589,7 +624,6 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
             {ok, _Id} ->
                 ok;
             {error, _} ->
-                ?DEBUG({insert_predicate, Predicate}),
                 m_rsc:insert([
                         {name, z_convert:to_binary(Predicate)},
                         {category, predicate},
