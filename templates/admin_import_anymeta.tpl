@@ -13,8 +13,7 @@
 	<h2>{_  _}</h2>
 
 {% wire id="find-anymeta-id" type="submit" postback=`find_imported` delegate=`mod_import_anymeta` %}
-<form id="find-anymeta-id" method="post" action="postback" class="admin-form">
-
+<form id="find-anymeta-id" method="post" action="postback" class="admin-form form-horizontal form-inline">
     <div class="widget">
         <h3 class="widget-header">{_ Find an imported Anymeta id _}</h3>
         <div class="widget-content">
@@ -24,6 +23,7 @@
                 <div class="controls">
                     <input type="text" id="imported_id" name="imported_id" value="{{ m.config.seo.keywords.value|escape }}" class="span2" />
                     {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
+                    <button class="btn btn-primary" type="submit">{_ Find _}</button>
                 </div>
             </div>
 
@@ -31,7 +31,6 @@
     		    {_ This id has not been imported. _}
     		</div>
 
-            <button class="btn btn-primary" type="submit">{_ Find _}</button>
         </div>
     </div>
 </form>
@@ -41,7 +40,7 @@
 </div>
 
 {% wire id="admin-anymeta-import" type="submit" postback=`import_anymeta` delegate=`mod_import_anymeta` %}
-<form id="admin-anymeta-import" method="POST" action="postback" class="admin-form">
+<form id="admin-anymeta-import" method="POST" action="postback" class="admin-form form-horizontal">
     <div class="widget">
         <h3 class="widget-header">{_ Import data _}</h3>
         <div class="widget-content">
@@ -81,7 +80,11 @@
 		        {_ Could not start import, unexpected result from remote server. _}
 		    </div>
 		
-		    <button class="btn btn-primary" type="submit">{_ Start Import _}</button>
+            <div class="control-group">
+		        <div class="controls">
+                    <button class="btn btn-primary" type="submit">{_ Start Import _}</button>
+                </div>
+		    </div>
 		</div>
 	</div>
 </form>
