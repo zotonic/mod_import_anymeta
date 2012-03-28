@@ -12,13 +12,14 @@
         </div>
     </div>
 
+    {% if not in_dialog %}
     <div class="control-group">
 	<label class="control-label" for="field-chapeau{{ lang_code_with_dollar }}">{_ Chapeau _} {{ lang_code_with_brackets }}</label>
         <div class="controls">
-	    <input type="text" id="field-chapeau{{ lang_code_with_dollar }}" name="title{{ lang_code_with_dollar }}" 
+	    <input type="text" id="field-chapeau{{ lang_code_with_dollar }}" name="chapeau{{ lang_code_with_dollar }}" 
 		   value="{{ is_i18n|if : r.translation[lang_code].chapeau : r.chapeau }}"
 		   {% if not is_editable %}disabled="disabled"{% endif %}
-		{% include "_language_attrs.tpl" language=lang_code class="do_autofocus span8 field-chapeau" %}
+		{% include "_language_attrs.tpl" language=lang_code class="span8 field-chapeau" %}
                 />
         </div>
     </div>
@@ -26,13 +27,14 @@
     <div class="control-group">
 	<label class="control-label" for="field-subtitle{{ lang_code_with_dollar }}">{_ Subtitle _} {{ lang_code_with_brackets }}</label>
         <div class="controls">
-	    <input type="text" id="field-subtitle{{ lang_code_with_dollar }}" name="title{{ lang_code_with_dollar }}" 
+	    <input type="text" id="field-subtitle{{ lang_code_with_dollar }}" name="subtitle{{ lang_code_with_dollar }}" 
 		   value="{{ is_i18n|if : r.translation[lang_code].subtitle : r.subtitle }}"
 		   {% if not is_editable %}disabled="disabled"{% endif %}
-		{% include "_language_attrs.tpl" language=lang_code class="do_autofocus span8 field-subtitle" %}
+		{% include "_language_attrs.tpl" language=lang_code class="span8 field-subtitle" %}
                 />
         </div>
     </div>
+    {% endif %}
 
     <div class="control-group">
 	<label class="control-label" for="field-summary{{ lang_code_with_dollar }}">{_ Summary _} {{ lang_code_with_brackets }}</label>
