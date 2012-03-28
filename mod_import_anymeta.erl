@@ -21,11 +21,12 @@
 
 -mod_title("Import Anymeta Site").
 -mod_description("Import data from an Anymeta web site.").
--mod_prio(500).
+-mod_prio(300).
 
 -export([
     init/1,
 
+    observe_admin_menu/3,
     event/2,
 
     get_thing/5,
@@ -33,6 +34,7 @@
 ]).
 
 -include_lib("zotonic.hrl").
+-include_lib("modules/mod_admin/include/admin_menu.hrl").
 
 -record(stats, {
     found = 0,
@@ -69,6 +71,16 @@ init(Context) ->
             ", Context),
             ok
     end.
+
+
+observe_admin_menu(admin_menu, Acc, Context) -> [
+     #menu_item{id=import_anymeta,
+                parent=admin_modules,
+                label=?__("Import from Anymeta", Context),
+                url={admin_import_anymeta},
+                visiblecheck={acl, use, ?MODULE}}
+
+     |Acc].
 
 
 event(#submit{message=find_imported}, Context) ->

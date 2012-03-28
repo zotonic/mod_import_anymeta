@@ -4,68 +4,94 @@
 
 {% block content %}
 
-<div id="content" class="zp-85">
-	<div class="block clearfix">
+<div class="admin-header">
+    <h2>{_ Import data from an Anymeta site _}</h2>
 
-	<h2>{_ Find an imported Anymeta id _}</h2>
+    <p>{_ Here you can import data from an Anymeta site into this Zotonic site. _}</p>
+</div>
 
-	{% wire id="find-anymeta-id" type="submit" postback=`find_imported` delegate=`mod_import_anymeta` %}
-    <form id="find-anymeta-id" method="post" action="postback" class="admin-form">
-		<div class="form-item clearfix">
-            <label>Anymeta ID</label>
-            <input type="text" id="imported_id" name="imported_id" value="" style="width:50px" />
-            {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
+	<h2>{_  _}</h2>
+
+{% wire id="find-anymeta-id" type="submit" postback=`find_imported` delegate=`mod_import_anymeta` %}
+<form id="find-anymeta-id" method="post" action="postback" class="admin-form">
+
+    <div class="widget">
+        <h3 class="widget-header">{_ Find an imported Anymeta id _}</h3>
+        <div class="widget-content">
+
+            <div class="control-group">
+                <label class="control-label" for="imported_id">{_ External Anymeta ID _}</label>
+                <div class="controls">
+                    <input type="text" id="imported_id" name="imported_id" value="{{ m.config.seo.keywords.value|escape }}" class="span2" />
+                    {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
+                </div>
+            </div>
+
+    		<div style="display:none" class="alert alert-error" id="find-error">
+    		    {_ This id has not been imported. _}
+    		</div>
+
+            <button class="btn btn-primary" type="submit">{_ Find _}</button>
         </div>
-		<p style="display:none" class="notification error" id="find-error">
-		    {_ This id has not been imported. _}
-		</p>
-		<div class="form-item clearfix">
-			<button type="submit">{_ Find _}</button>
-		</div>
-    </form>
+    </div>
+</form>
 
-	<h2>{_ Import data from an Anymeta web site _}</h2>
+<div style="display:none" id="import-started" class="alert alert-success">
+    {_ The import has started, come back here for more information about the progress of your import. _}
+</div>
 
-	<p style="display:none" id="import-started" class="notification notice">{_ The import has started, come back here for more information about the progress of your import. _}</p>
+{% wire id="admin-anymeta-import" type="submit" postback=`import_anymeta` delegate=`mod_import_anymeta` %}
+<form id="admin-anymeta-import" method="POST" action="postback" class="admin-form">
+    <div class="widget">
+        <h3 class="widget-header">{_ Import data _}</h3>
+        <div class="widget-content">
 
-	{% wire id="admin-anymeta-import" type="submit" postback=`import_anymeta` delegate=`mod_import_anymeta` %}
-	<form id="admin-anymeta-import" method="POST" action="postback" class="admin-form">
-		<div class="form-item clearfix">
-			<label for="field-date-start">{_ Hostname of Anymeta site (without “http://”) _}</label>
-			<input type="text" id="host" name="host" value="{{ m.session.anymeta_host|force_escape|default:"www.example.com"}}" />
-			<p style="display:none" class="notification error" id="import-nxdomain">{_ Could not start import, the hostname could not be found. _}</p>
-		</div>
+            <div class="control-group">
+                <label class="control-label" for="host">{_ Hostname of Anymeta site (without “http://”) _}</label>
+                <div class="controls">
+                    <input type="text" id="host" name="host" value="{{ m.session.anymeta_host|force_escape|default:"www.example.com"}}" class="span8" />
+                </div>
+    			<p style="display:none" class="notification error" id="import-nxdomain">{_ Could not start import, the hostname could not be found. _}</p>
+            </div>
 
-		<div class="form-item clearfix">
-			<label for="field-date-start">{_ From Anymeta ID _}</label>
-			<input type="text" name="start-id" id="start-id" value="1" style="width:50px" />
-			{% validate id="start-id" type={numericality minimum=1} %}
-		</div>
+            <div class="control-group">
+                <label class="control-label" for="start-id">{_ From Anymeta ID _}</label>
+                <div class="controls">
+                    <input type="text" id="start-id" name="start-id" value="1" class="span2" />
+                </div>
+                {% validate id="start-id" type={numericality minimum=1} %}
+            </div>
 
-		<div class="form-item clearfix">
-			<label for="field-date-stop">{_ Till (and including) Anymeta ID _}</label>
-			<input type="text" name="end-id" id="end-id" value="" style="width:50px" />
-			{% validate id="end-id" type={numericality minimum=1} %}
-		</div>
+            <div class="control-group">
+                <label class="control-label" for="end-id">{_ To Anymeta ID _}</label>
+                <div class="controls">
+                    <input type="text" id="end-id" name="end-id" value="" class="span2" />
+                </div>
+                {% validate id="end-id" type={numericality minimum=1} %}
+            </div>
 
-		<div class="form-item clearfix">
-			<label for="field-date-start">{_ Optional sysadmin password _}</label>
-			<input type="text" name="sysadmin-pw" value="" style="width:120px" />
-		</div>
+            <div class="control-group">
+                <label class="control-label" for="sysadmin-pw">{_ Optional sysadmin password _}</label>
+                <div class="controls">
+                    <input type="text" id="sysadmin-pw" name="sysadmin-pw" value="" class="span2" />
+                </div>
+            </div>
 		  
-		<p style="display:none" class="notification error" id="import-error">{_ Could not start import, unexpected result from remote server. _}</p>
+		    <div style="display:none" class="alert alert-error" id="import-error">
+		        {_ Could not start import, unexpected result from remote server. _}
+		    </div>
 		
-		<div class="form-item clearfix">
-			<button type="submit">{_ Start Import _}</button>
+		    <button class="btn btn-primary" type="submit">{_ Start Import _}</button>
 		</div>
-	</form>
 	</div>
+</form>
 	
-	<div class="block">
-	    <h3>{_ Messages from the import _}</h3>
-    	<pre id="progress">
-    	</pre>
-	</div>
+<div class="widget">
+    <h3 class="widget-header">{_ Messages from the import _}</h3>
+    <div class="widget-content">
+        <p>{_ Progress messages from running imports are shown here. _}</p>
+        <pre id="progress"></pre>
+    </div>
 </div>
 
 {% wire action={connect signal={import_anymeta_progress}} %}
