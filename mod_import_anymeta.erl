@@ -293,7 +293,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                             end
                      end,
             
-            Fields1 = map_sections(Fields),
+            Fields1 = fix_html_summary(map_sections(Fields)),
             Fields2 = z_notifier:foldl(import_anymeta_fields, Fields1, Context),
             
             case write_rsc(AnymetaId, Fields2, Stats, Context) of
@@ -571,6 +571,54 @@ fix_pubstart(Props) ->
             Created ->
                 [{publication_start, Created} | proplists:delete(publication_start, Props) ]
         end.
+
+%% @TODO: make this a check if the summary contains HTML (other than <p>)
+%%        If so, then move the body to a block and the summary_html to the body.
+fix_html_summary(Props) ->
+    case is_non_p_html(proplists:get_value(summary_html, Props)) of
+        true ->
+            case is_empty(proplists:get_value(body, Props)) of
+                true ->
+                    [ {summary, <<>>}, {body, proplists:get_value(summary_html, Props)}
+                    | proplists:delete(body, proplists:delete(summary, Props)) ];
+                false ->
+                    % Move the body to a block
+                    Blocks = [ 
+                            [
+                                {name, <<"body">>}, 
+                                {type, <<"text">>}, 
+                                {body, proplists:get_value(body, Props)}
+                            ]
+                            | proplists:get_value(blocks, Props)
+                         ],
+                    [ 
+                        {summary, <<>>},
+                        {body, proplists:get_value(summary_html, Props)},
+                        {blocks, Blocks}
+                    | proplists:delete(blocks, 
+                        proplists:delete(body, 
+                          proplists:delete(summary, Props)))
+                    ]
+            end;
+        false ->
+            Props
+    end.
+
+    is_empty(undefined) -> true;
+    is_empty({trans, Trs}) -> not lists:any(fun({_,T}) -> not z_utils:is_empty(T) end, Trs);
+    is_empty(A) -> z_utils:is_empty(A).
+
+    is_non_p_html(undefined) -> false;
+    is_non_p_html(<<>>) -> false;
+    is_non_p_html([]) -> false;
+    is_non_p_html({trans, Tr}) -> lists:any(fun is_non_p_html/1, Tr);
+    is_non_p_html({_, V}) -> is_non_p_html(V);
+    is_non_p_html(V) when is_list(V); is_binary(V) ->
+        case re:run(V, <<"<[^/p]">>) of
+            nomatch -> false;
+            {match, _} -> true
+        end;
+    is_non_p_html(_) -> false.
 
 map_kind_type(<<"ROLE">>, _) -> predicate;
 map_kind_type(<<"TYPE">>, _) -> category;
