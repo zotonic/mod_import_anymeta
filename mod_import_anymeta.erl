@@ -269,7 +269,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             Texts3 = proplists:delete(website, Texts2),
             {trans, TR} = proplists:get_value(title, Texts3),
             Langs = [ Iso || {Iso, _} <- TR ],
-            OtherFields = map_fields(Thing),
+            OtherFields = fix_pubstart(map_fields(Thing)),
             Fields0 = [
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
@@ -426,11 +426,11 @@ map_texts(Lang, Ts) ->
         Sections = lists:foldr(fun({Name, {struct, T}}, Acc) ->
                                     Acc1 = case proplists:get_value(<<"text">>, T) of
                                         <<>> -> Acc;
-                                        Text -> [ {{section, 0-length(Acc), Name, text}, Text} | Acc]
+                                        Text -> [ {{block, 0-length(Acc), Name, text}, Text} | Acc]
                                     end,
                                     case proplists:get_value(<<"subhead">>, T) of
                                         <<>> -> Acc1;
-                                        SubHead -> [ {{section, 0-length(Acc1), Name, subheading}, SubHead} | Acc1]
+                                        SubHead -> [ {{block, 0-length(Acc1), Name, header}, SubHead} | Acc1]
                                     end
                                end,
                                [],
@@ -442,19 +442,19 @@ map_texts(Lang, Ts) ->
         skip.
 
 map_sections(Fs) ->
-    case lists:partition(fun({{section, _, _, _}, _}) -> true; (_) -> false end, Fs) of
+    case lists:partition(fun({{block, _, _, _}, _}) -> true; (_) -> false end, Fs) of
         {[], _} ->
             Fs;
         {Sections, Fs1} ->
             % Combine the sections in a hierarchical structure
-            [{sections, [
+            [{blocks, [
                     case Type of
-                        subheading ->
-                            [ {type, subheading}, {text, Texts} ];
+                        header ->
+                            [ {type, <<"header">>}, {text, Texts} ];
                         text ->
-                            [ {type, text}, {name, z_convert:to_binary(z_string:to_lower(Name))}, {body, Texts} ]
+                            [ {type, <<"text">>}, {name, z_convert:to_binary(z_string:to_lower(Name))}, {body, Texts} ]
                     end
-                || {{section, _Nr, Name, Type}, Texts} <- lists:sort(Sections)
+                || {{block, _Nr, Name, Type}, Texts} <- lists:sort(Sections)
             ]
           } | Fs1]
     end.
@@ -556,6 +556,21 @@ fix_media_category({category, media} = C, Thing) ->
 fix_media_category(Cat, _Thing) ->
     Cat.
 
+
+fix_pubstart(Props) ->
+    case proplists:get_value(publication_start, Props) of
+        undefined -> fix_pubstart1(Props);
+        {{1970, _, _}, _} -> fix_pubstart1(Props);
+        _ -> Props
+    end.
+    
+    fix_pubstart1(Props) ->
+        case proplists:get_value(created, Props) of
+            undefined -> 
+                Props;
+            Created ->
+                [{publication_start, Created} | proplists:delete(publication_start, Props) ]
+        end.
 
 map_kind_type(<<"ROLE">>, _) -> predicate;
 map_kind_type(<<"TYPE">>, _) -> category;
