@@ -16,6 +16,8 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
+%% TODO: should we allow <br/> in the summary?  We can enter it.
+
 -module(mod_import_anymeta).
 -author("Marc Worrell <marc@worrell.nl>").
 
@@ -589,7 +591,7 @@ fix_html_summary(Props) ->
                                 {type, <<"text">>}, 
                                 {body, proplists:get_value(body, Props)}
                             ]
-                            | proplists:get_value(blocks, Props)
+                            | proplists:get_value(blocks, Props, [])
                          ],
                     [ 
                         {summary, <<>>},
@@ -614,6 +616,7 @@ fix_html_summary(Props) ->
     is_non_p_html({trans, Tr}) -> lists:any(fun is_non_p_html/1, Tr);
     is_non_p_html({_, V}) -> is_non_p_html(V);
     is_non_p_html(V) when is_list(V); is_binary(V) ->
+        % <<"<([ac-oq-z]|b[^r])">>
         case re:run(V, <<"<[^/p]">>) of
             nomatch -> false;
             {match, _} -> true
