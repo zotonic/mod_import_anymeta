@@ -29,6 +29,7 @@
     init/1,
 
     observe_admin_menu/3,
+    observe_dispatch/2,
     event/2,
 
     get_thing/5,
@@ -84,6 +85,76 @@ observe_admin_menu(admin_menu, Acc, Context) -> [
 
      |Acc].
 
+
+%% @doc Map anyMeta URLs to Zotonic resources, uses a permanent redirect
+observe_dispatch(#dispatch{path=Path}, Context) ->
+    % URIs matched: 
+    % (...)/(article|artefact|...)-<id>-<language>.html
+    % (...)/(article|artefact|...)-<id>.html
+    % (...)/id.php/(uuid|id|name)
+    Parts = string:tokens(Path, "/"),
+    case lists:reverse(Parts) of
+        [AnyId,"id.php"|_] ->
+            redirect(AnyId, undefined, Context);
+        [Rsc|_] ->
+            case filename:extension(Rsc) of
+                ".html" ->
+                    case string:tokens(filename:rootname(Rsc), "-") of
+                        [_Kind,AnyId,[_,_] = Lang] ->
+                            redirect(AnyId, Lang, Context);
+                        [_Kind,AnyId] ->
+                            redirect(AnyId, undefined, Context)
+                    end;
+                _ ->
+                    undefined
+            end
+    end.
+
+    redirect(AnyId, Lang, Context) ->
+        case find_any_id(AnyId, Context) of
+            undefined -> 
+                undefined;
+            {ok, RscId} -> 
+                case z_trans:is_language(Lang) of
+                    true ->
+                        % Add language
+                        Context1 = z_context:set_language(list_to_atom(Lang), Context);
+                    false ->
+                        % Ignore language
+                        Context1 = Context
+                end,
+                case m_rsc:p(RscId, page_url, Context1) of
+                    undefined ->
+                        undefined;
+                    URL ->
+                        {ok, #dispatch_match{
+                            mod=resource_redirect,
+                            mod_opts=[{url, URL}, {is_permanent, true}],
+                            bindings=[]
+                        }}
+                end
+        end.
+    
+    
+    find_any_id(AnyId, Context) ->
+        case z_utils:only_digits(AnyId) of
+            true ->
+                % anyMeta id
+                case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+                    undefined -> undefined;
+                    RscId -> {ok, RscId}
+                end;
+            false ->
+                % UUID or name
+                case m_rsc:name_to_id(AnyId, Context) of
+                    {ok, RscId} -> {ok, RscId};
+                    {error, _} ->
+                        case z_db:q1("select rsc_id from import_anymeta where uuid = $1", [AnyId], Context) of
+                            undefined -> undefined;
+                            RscId -> {ok, RscId}
+                        end
+                end
+        end.
 
 event(#submit{message=find_imported}, Context) ->
     AnymetaId = z_convert:to_integer(z_string:trim(z_context:get_q_validated("imported_id", Context))),
