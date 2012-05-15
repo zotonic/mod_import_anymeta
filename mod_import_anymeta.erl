@@ -16,7 +16,11 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 
-%% TODO: should we allow <br/> in the summary?  We can enter it.
+%% TODO: Add all original anymeta types as resources of the category "anymeta_type".
+%%       Make the resources of the form: 
+%%       [ {name, "anytype_<name>"}, {title, "<<original title>>"} ]
+%%       Links all imported resources to the original anymeta types w/ predicate 'hasanytype'
+%%       This enables later correction of the imported data.
 
 -module(mod_import_anymeta).
 -author("Marc Worrell <marc@worrell.nl>").
@@ -48,6 +52,7 @@
 }).
 
 init(Context) ->
+    ensure_anymeta_type(Context),
     case z_db:table_exists(import_anymeta, Context) of
         true ->
             ok;
@@ -367,10 +372,15 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                      end,
             
             Fields1 = fix_html_summary(map_sections(Fields)),
-            Fields2 = z_notifier:foldl(import_anymeta_fields, Fields1, Context),
+            Fields2 = convert_query(Fields1, Thing, Context),
+            Fields3 = fix_rsc_name(Fields2),
+            FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields3, Context),
             
-            case write_rsc(AnymetaId, Fields2, Stats, Context) of
+            case write_rsc(AnymetaId, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
+                    import_edge_kind_type(RscId, proplists:get_value(<<"kind">>, Thing), proplists:get_value(<<"type">>, Thing), Context),
+                    
+                    % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     case proplists:get_value(<<"file">>, Thing) of
                         undefined ->
@@ -406,7 +416,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                         % TODO: add a callback for skippable kinds
                         case proplists:get_value(<<"kind">>, Thing) of
                             <<"ROLE">> -> true;
-                            <<"TYPE">> -> true;
+                            <<"TYPE">> -> false;
                             <<"LANGUAGE">> -> true;
                             _ -> false
                         end
@@ -629,6 +639,15 @@ fix_media_category({category, media} = C, Thing) ->
 fix_media_category(Cat, _Thing) ->
     Cat.
 
+fix_rsc_name(Props) ->
+    case proplists:get_value(category, Props) of
+        anymeta_type ->
+            Name = z_convert:to_binary(proplists:get_value(name, Props, "")),
+            [ {name, <<"anytype_", Name/binary>>} | proplists:delete(name, Props) ];
+        _ ->
+            Props
+    end.
+
 
 fix_pubstart(Props) ->
     case proplists:get_value(publication_start, Props) of
@@ -695,7 +714,7 @@ fix_html_summary(Props) ->
     is_non_p_html(_) -> false.
 
 map_kind_type(<<"ROLE">>, _) -> predicate;
-map_kind_type(<<"TYPE">>, _) -> category;
+map_kind_type(<<"TYPE">>, _) -> anymeta_type;
 map_kind_type(<<"ATTACHMENT">>, _) -> media;
 map_kind_type(<<"ARTICLE">>, _) -> article;
 map_kind_type(<<"ARTEFACT">>, _) -> artifact;
@@ -876,6 +895,27 @@ write_file(AnymetaId, RscId, Filename, Data, Stats, Context) ->
         end.
 
 
+import_edge_kind_type(RscId, Kind, {struct, Types}, Context) ->
+    ensure_predicate('subject', Context),
+    ensure_category('anymeta_type', Context),
+    TypesSymbolic = proplists:get_value(<<"symbolic">>, Types),
+    Objects = [ z_convert:to_binary(z_string:to_lower(<<"anytype_", Name/binary>>)) || Name <- [ Kind | TypesSymbolic ] ], 
+    [ import_edge_kind_type_1(RscId, Name, Context) || Name <- lists:usort(Objects) ].
+
+    import_edge_kind_type_1(RscId, Name, Context) ->
+        case m_rsc:rid(Name, Context) of
+            undefined ->
+                {ok, ObjectId} = m_rsc:insert([
+                                            {category, anymeta_type},
+                                            {name, Name},
+                                            {title, <<"Anymeta: ", Name/binary>>}
+                                        ], Context);
+            ObjectId ->
+                ObjectId
+        end,
+        m_edge:insert(RscId, 'subject', ObjectId, Context).
+
+
 import_edges(_Host, _RscId, undefined, Stats, _Context) ->
     Stats;
 import_edges(Host, RscId, Edges, Stats, Context) when is_list(Edges) ->
@@ -907,7 +947,128 @@ import_edge(Host, SubjectId, {struct, Props}, Stats, Context) ->
     end.
 
 
+convert_query(Fields, Thing, Context) ->
+    case proplists:get_value(<<"serialize">>, Thing) of
+        {struct, Ser} ->
+            AnymetaQuery = case proplists:get_value(<<"listpublish">>, Ser) of
+                                undefined -> proplists:get_value(<<"listedit">>, Ser);
+                                QQ -> QQ
+                           end,
+            case AnymetaQuery of
+                {struct, Query} ->
+                    Kinds = filter_on(proplists:get_value(<<"kinds">>, Query)),
+                    Types = filter_on(proplists:get_value(<<"types">>, Query)),
+                    Exclude = filter_on(proplists:get_value(<<"exclude">>, Query)),
+                    HasObject = filter_rel(proplists:get_value(<<"haschild">>, Query)),
+                    HasSubject = filter_rel(proplists:get_value(<<"hasparent">>, Query)),
+                    Sort = filter_sort(proplists:get_value(<<"sort">>, Query)),
+                    Limit = proplists:get_value(<<"limit">>, Query),
+
+                    % Time:
+                    % {<<"time">>,{struct,[{<<"req">>,{struct,[{<<"match_date">>,<<>>},{<<"from">>,{struct,[{<<"dab">>,{struct,[{<<"days">>,<<>>},{<<"afterbefore">>,<<>>}]}},{<<"np">>,{struct,[{<<"nextprev">>,<<"next">>},{<<"daymonth">>,<<"monday">>}]}},{<<"aday">>,{struct,[{<<"day">>,<<>>},{<<"nextcurprev">>,<<"next">>},{<<"wmy">>,<<"week">>}]}},{<<"dmy">>,{struct,[{<<"day">>,<<>>},{<<"month">>,<<>>},{<<"year">>,<<>>}]}}]}},{<<"to">>,{struct,[{<<"duration">>,{struct,[{<<"hours">>,<<>>},{<<"days">>,<<>>},{<<"months">>,<<>>},{<<"years">>,<<>>}]}},{<<"until">>,{struct,[{<<"dab">>,{struct,[{<<"days">>,<<>>},{<<"afterbefore">>,<<>>}]}},{<<"np">>,{struct,[{<<"nextprev">>,<<"next">>},{<<"daymonth">>,<<"monday">>}]}},{<<"aday">>,{struct,[{<<"day">>,<<>>},{<<"nextcurprev">>,<<"next">>},{<<"wmy">>,<<"week">>}]}},{<<"dmy">>,{struct,[{<<"day">>,<<>>},{<<"month">>,<<>>},{<<"year">>,<<>>}]}}]}}]}}]}}]}}
+
+                    % Place:
+                    % {<<"place">>,{struct,[{<<"req">>,{struct,[{<<"location">>,{struct,[{<<"lat">>,<<>>},{<<"long">>,<<>>}]}},{<<"maxdistance">>,<<>>},{<<"maxpoints">>,<<>>}]}}]}}
+
+                    % Map to: http://zotonic.com/documentation/761/the-query-search-model
+
+                    ?DEBUG({Kinds, Types, Exclude, HasObject, HasSubject, Sort, Limit}),
+                    Kind = case Kinds of 
+                               [K] -> K;
+                               _ -> undefined
+                           end,
+                    Cats = lists:foldl(fun(T,Acc) ->
+                                            case z_notifier:first({import_anymeta_kind_type, Kind, [T]}, Context) of
+                                                undefined -> [ z_string:to_lower(T) | Acc ];
+                                                {ok, Category} -> [Category|Acc]
+                                            end
+                                        end,
+                                        [],
+                                        Types),
+                    Cats1 = case Cats of 
+                                [] -> [ map_kind_type(K, []) || K <- Kinds ];
+                                _ -> Cats
+                           end,
+                    Fs = [
+                        [ {"cat", z_convert:to_list(C)} || C <- Cats1 ],
+                        [ {"cat_exclude", z_convert:to_list(C)} || C <- Exclude ],
+                        [ {"hassubject", iolist_to_binary(R)} || R <- HasSubject ],
+                        [ {"hasobject", iolist_to_binary(R)} || R <- HasObject ],
+                        case Sort of undefined -> []; _ -> [{"sort", z_convert:to_binary(Sort)}] end
+                    ],
+                    [ 
+                        {'query', z_string:trim(iolist_to_binary([[K,$=,V,10] || {K,V} <- lists:flatten(Fs)]))},
+                        {'query_limit', Limit}
+                        | Fields
+                    ];
+                _ ->
+                    Fields
+            end;
+        _ -> 
+            Fields
+    end.
+    
+    filter_on({struct, Ps}) -> [ P || {P,<<"on">>} <- Ps ];
+    filter_on(_) -> [].
+
+    filter_rel({struct, Rs}) ->
+        % Want = proplists:get_value(<<"want">>, Rs, <<>>),
+        OneOf = z_convert:to_list(z_string:trim(proplists:get_value(<<"oneof">>, Rs, <<>>))),
+        All = z_convert:to_list(z_string:trim(proplists:get_value(<<"all">>, Rs, <<>>))),
+        TsOneOf = [ string:tokens(z_string:trim(A), ":") || A <- string:tokens(OneOf, ",") ],
+        TsAll = [ string:tokens(z_string:trim(A), ":") || A <- string:tokens(All, ",") ],
+        [
+            case Rel of
+                [A] -> A;
+                [A,Pred] -> [$[, A, $,, z_convert:to_list(map_predicate(Pred)), $]]
+            end
+            || Rel <- TsOneOf ++ TsAll
+        ];
+    filter_rel(_) -> 
+        [].
+
+    filter_sort({struct, [{struct, First}|_]}) ->
+        % {<<"sort">>,[{struct,[{<<"by">>,<<"create_date">>},{<<"order">>,<<"-">>}]},{struct,[{<<"by">>,<<>>},{<<"order">>,<<"-">>}]}]}
+        By = proplists:get_value(<<"by">>, First),
+        Order = proplists:get_value(<<"order">>, First, <<"+">>),
+        A = case By of
+                <<"title">> -> [Order, "rsc.pivot_title"];
+                <<"distance">> -> undefined;
+                <<"pub_date_start">> -> [Order,"rsc.publication_start"];
+                <<"pub_date_end">> -> [Order,"rsc.publication_end"];
+                <<"modify_date">> -> [Order,"rsc.modified"];
+                <<"create_date">> -> [Order,"rsc.created"];
+                <<"date_start">> -> [Order,"rsc.pivot_date_start"];
+                <<"date_end">> -> [Order,"rsc.pivot_date_end"];
+                <<"org_pubdate">> -> undefined;
+                <<"textscore">> -> undefined;
+                <<"activity">> -> undefined;
+                <<"views">> -> undefined;
+                <<"random">> -> undefined;
+                _ -> undefined
+            end,
+        case A of undefined -> undefined; _ -> iolist_to_binary(A) end;
+    filter_sort(_) ->
+        undefined.
+
 %% @doc Show progress in the progress area of the import window.
 progress(Message, Context) ->
     mod_signal:emit_script({import_anymeta_progress, []}, 
                            z_render:wire({insert_top, [{target, "progress"}, {text, [Message,"<br/>"]}]}, Context)).
+
+
+ensure_anymeta_type(Context) ->
+    case m_category:name_to_id(anymeta_type, Context) of
+        {ok, _} -> 
+            skip;
+        _ ->
+            {ok, ParentId} = m_category:name_to_id(meta, Context),
+            m_category:insert(ParentId, 
+                              anymeta_type, 
+                              [
+                                {title, "anyMeta type"}, 
+                                {summary, "Used for the anymeta data import."}
+                              ],
+                              Context)
+    end.
+    
