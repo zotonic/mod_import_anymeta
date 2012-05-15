@@ -120,10 +120,11 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
             undefined -> 
                 undefined;
             {ok, RscId} -> 
-                case z_trans:is_language(Lang) of
+                Lang1 = map_language(Lang),
+                case z_trans:is_language(Lang1) of
                     true ->
                         % Add language
-                        Context1 = z_context:set_language(list_to_atom(Lang), Context);
+                        Context1 = z_context:set_language(list_to_atom(Lang1), Context);
                     false ->
                         % Ignore language
                         Context1 = Context
@@ -139,7 +140,7 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
                         }}
                 end
         end.
-    
+        
     
     find_any_id(AnyId, Context) ->
         case z_utils:only_digits(AnyId) of
@@ -739,8 +740,9 @@ map_predicate(<<"HOME_SET">>) -> hascollection;
 map_predicate(<<>>) -> relation;
 map_predicate(P) -> z_convert:to_atom(z_string:to_lower(P)).
 
-map_language(X) -> X.
- 
+map_language("jp") -> "ja";
+map_language(<<"jp">>) -> <<"ja">>;
+map_language(Code) -> Code.
 
 
 write_rsc(AnymetaId, Fields, Stats, Context) ->
