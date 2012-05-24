@@ -265,8 +265,16 @@ get_thing(Id, Hostname, User, Pass, Context) ->
         }} ->
             case proplists:get_value("content-type", Headers) of
                 "application/json" ++ _ ->
-                    {struct, Props} = mochijson2:decode(Body),
-                    {ok, Props};
+                    case catch mochijson2:decode(Body) of
+                        {struct, Props} -> {ok, Props};
+                        invalid_utf8 -> 
+                            case catch mochijson2:decode(z_string:sanitize_utf8(Body)) of
+                                {struct, Props} -> {ok, Props};
+                                invalid_utf8 -> {error, invalid_utf8}; 
+                                _ -> {error, no_json_struct}
+                            end;
+                        _ -> {error, no_json_struct}
+                    end;
                 CT ->
                     {error, {unexpected_content_type, CT}}
             end;
