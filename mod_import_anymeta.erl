@@ -346,6 +346,9 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
 
 
 import_thing(Host, AnymetaId, Thing, Stats, Context) ->
+    % io:format("~p~n", [Thing]),
+    % ?DEBUG(proplists:get_keys(Thing)),
+
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
     case skip(Thing) of
         false ->
@@ -580,6 +583,8 @@ map_fields([{<<"pub_date_start">>, Date}|T], Acc) ->
     map_fields(T, [{publication_start, convert_datetime(Date)}|Acc]);
 map_fields([{<<"pub_date_end">>, Date}|T], Acc) ->
     map_fields(T, [{publication_end, convert_datetime(Date)}|Acc]);
+map_fields([{<<"org_pubdate">>, Date}|T], Acc) ->
+    map_fields(T, [{org_pubdate, convert_datetime(Date)}|Acc]);
 map_fields([{<<"create_date">>, Date}|T], Acc) ->
     map_fields(T, [{created, convert_datetime(Date)}|Acc]);
 map_fields([{<<"modify_date">>, Date}|T], Acc) ->
@@ -590,6 +595,7 @@ map_fields([{<<"coverage">>, {struct, Cs}}|T], Acc) ->
     Acc1 = lists:foldl(
         fun({<<"date_start">>, D}, A) -> [ {date_start, convert_datetime(D)} | A ];
            ({<<"date_end">>, D}, A) -> [ {date_end, convert_datetime(D)} | A ];
+           ({<<"org_pubdate">>, D}, A) -> [ {org_pubdate, convert_datetime(D)} | A ];
            (_, A) -> A
         end,
         Acc,
