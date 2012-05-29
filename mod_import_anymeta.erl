@@ -301,7 +301,7 @@ get_thing(Id, Hostname, User, Pass, Context) ->
 
 get_request(Method, Url, User, Pass) ->
     Headers = auth_header(User, Pass),
-    httpc:request(Method, {Url, Headers}, [{autoredirect, true}, {relaxed, true}, {timeout, 10000}], []).
+    httpc:request(Method, {Url, Headers}, [{autoredirect, true}, {relaxed, true}, {timeout, 60000}], []).
 
     auth_header(undefined, undefined) ->
         [];
@@ -337,6 +337,10 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
+            import_loop(Host, From, To, Username, Password, Stats, Context);
+        {error, timeout} ->
+            progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [From]), Context),
+            timer:sleep(5000),
             import_loop(Host, From, To, Username, Password, Stats, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping to next", [From]), Context),
