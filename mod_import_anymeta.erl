@@ -35,7 +35,9 @@
     observe_admin_menu/3,
     observe_dispatch/2,
     event/2,
-
+    
+    find_any_id/2,
+    do_import/6,
     get_thing/5,
     test_host/5
 ]).
@@ -48,7 +50,8 @@
     notfound = 0,
     error = [],
     consequetive_notfound = 0,
-    start_time = now()
+    start_time = now(),
+    delayed=[]
 }).
 
 init(Context) ->
@@ -140,27 +143,6 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
                         }}
                 end
         end.
-        
-    
-    find_any_id(AnyId, Context) ->
-        case z_utils:only_digits(AnyId) of
-            true ->
-                % anyMeta id
-                case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
-                    undefined -> undefined;
-                    RscId -> {ok, RscId}
-                end;
-            false ->
-                % UUID or name
-                case m_rsc:name_to_id(AnyId, Context) of
-                    {ok, RscId} -> {ok, RscId};
-                    {error, _} ->
-                        case z_db:q1("select rsc_id from import_anymeta where uuid = $1", [AnyId], Context) of
-                            undefined -> undefined;
-                            RscId -> {ok, RscId}
-                        end
-                end
-        end.
 
 event(#submit{message=find_imported}, Context) ->
     AnymetaId = z_convert:to_integer(z_string:trim(z_context:get_q_validated("imported_id", Context))),
@@ -193,6 +175,34 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
                 {error, _Other} ->
                     z_render:wire([{fade_in, [{target, "import-error"}]}, {hide, [{target, "import-nxdomain"}]}], Context)
             end
+    end.
+
+
+find_any_id(AnyId, Context) when is_binary(AnyId) ->
+    find_any_id(z_convert:to_list(AnyId), Context);
+find_any_id(AnyId, Context) when is_list(AnyId) ->
+    case z_utils:only_digits(AnyId) of
+        true ->
+            % anyMeta id
+            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+                undefined -> undefined;
+                RscId -> {ok, RscId}
+            end;
+        false ->
+            % UUID or name
+            case m_rsc:name_to_id(AnyId, Context) of
+                {ok, RscId} -> {ok, RscId};
+                {error, _} ->
+                    case z_db:q1("select rsc_id from import_anymeta where uuid = $1", [AnyId], Context) of
+                        undefined -> undefined;
+                        RscId -> {ok, RscId}
+                    end
+            end
+    end;
+find_any_id(AnyId, Context) when is_integer(AnyId)->
+    case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+        undefined -> undefined;
+        RscId -> {ok, RscId}
     end.
 
 
@@ -303,14 +313,14 @@ get_request(Method, Url, User, Pass) ->
 
 
 %% @doc Fetch all items from the given host
-import_loop(_, _From, undefined, _Username, _Password, #stats{consequetive_notfound=NF}, Context) when NF > 100 ->
+import_loop(Host, _From, undefined, Username, Password, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
     % Signal the end of the import to the UI
     progress("STOP - found more than 100 consequetive not founds.<br/>", Context),
-    ok;
-import_loop(_, From, To, _Username, _Password, _Stats, Context) when is_integer(To), From > To ->
+    handle_delayed(Delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Username, Password, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
-    ok;
+    handle_delayed(Stats#stats.delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
 import_loop(Host, From, To, Username, Password, Stats, Context) ->
     progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
     case get_thing(From, Host, Username, Password, Context) of
@@ -343,6 +353,30 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
             },
             import_loop(Host, From+1, To, Username, Password, Stats1, Context)
     end.
+
+
+    handle_delayed([], _Host, _Username, _Password, #stats{delayed=[]} = Stats, _Context) ->
+        {ok, Stats};
+    handle_delayed([], Host, Username, Password, #stats{delayed=Delayed} = Stats, Context) ->
+        handle_delayed(Delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
+    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Username, Password, Stats, Context) ->
+        AnyId = z_convert:to_integer(AnymetaId),
+        FoundId = case find_any_id(AnyId, Context) of
+                    undefined ->
+                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Username, Password, Stats, Context),
+                        find_any_id(AnyId, Context);
+                    FndId ->
+                        Stats1 = Stats,
+                        FndId
+                  end,
+        case FoundId of
+            {ok, KwId} ->
+                progress(io_lib:format("    Edge ~w -[~p]-> ~w", [RscId,subject,KwId]), Context),
+                {ok, _} = m_edge:insert(RscId, subject, KwId, [no_touch], Context);
+            undefined ->
+                progress(io_lib:format("~w: not imported, skipping as keyword of ~w", [AnyId, RscId]), Context)
+        end,
+        handle_delayed(Ds, Host, Username, Password, Stats1, Context).
 
 
 import_thing(Host, AnymetaId, Thing, Stats, Context) ->
@@ -394,18 +428,19 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                     
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
+                    Stats3 = import_keywords(RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
                     case proplists:get_value(<<"file">>, Thing) of
                         undefined ->
-                            Stats2;
+                            Stats3;
                         {struct, File} -> 
                             Filename = proplists:get_value(<<"original_file">>, File),
                             {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
                             case proplists:get_value(<<"encode">>, Fileblob) of
                                 <<"base64">> ->
                                     Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
-                                    write_file(AnymetaId, RscId, Filename, Data, Stats2, Context);
+                                    write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
                                 Encoding ->
-                                    Stats2#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats2#stats.error]}
+                                    Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
                            end
                     end;
                 {error, Stats1} ->
@@ -561,8 +596,9 @@ group_by_lang(Ts) ->
 group_by_lang([], D) ->
     [ {Prop, {trans, Ts}} || {Prop,Ts} <- dict:to_list(D) ];
 group_by_lang([{Iso,Texts}|Ts], D) ->
-    D1 = lists:foldl(fun({L,T}, Acc) ->
-                        dict:append(L, {Iso, T}, Acc)
+    D1 = lists:foldl(fun({L,null}, Acc) -> dict:append(L, {Iso, <<>>}, Acc);
+                        ({L,undefined}, Acc) -> dict:append(L, {Iso, <<>>}, Acc);
+                        ({L,T}, Acc) -> dict:append(L, {Iso, T}, Acc)
                      end,
                      D,
                      Texts),
@@ -929,10 +965,12 @@ import_edge_kind_type(RscId, Kind, {struct, Types}, Context) ->
             ObjectId ->
                 ObjectId
         end,
-        m_edge:insert(RscId, 'subject', ObjectId, Context).
+        m_edge:insert(RscId, 'subject', ObjectId, [no_touch], Context).
 
 
 import_edges(_Host, _RscId, undefined, Stats, _Context) ->
+    Stats;
+import_edges(_Host, _RscId, null, Stats, _Context) ->
     Stats;
 import_edges(Host, RscId, Edges, Stats, Context) when is_list(Edges) ->
     lists:foldl(fun(Edge, St) ->
@@ -961,6 +999,30 @@ import_edge(Host, SubjectId, {struct, Props}, Stats, Context) ->
             {ok, _} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
             Stats
     end.
+
+
+import_keywords(_RscId, undefined, Stats, _Context) ->
+    Stats;
+import_keywords(_RscId, null, Stats, _Context) ->
+    Stats;
+import_keywords(RscId, KeywordIds, Stats, Context) when is_list(KeywordIds) ->
+    lists:foldl(fun(KwId, St) ->
+                    import_keyword(RscId, KwId, St, Context)
+                end,
+                Stats,
+                KeywordIds).
+    
+    import_keyword(SubjectId, KeywordId, Stats, Context) ->
+        case find_any_id(KeywordId, Context) of
+            {ok, ZotonicId} ->
+                progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,subject,ZotonicId]), Context),
+                {ok, _} = m_edge:insert(SubjectId, subject, ZotonicId, [no_touch], Context),
+                Stats;
+            undefined ->
+                progress(io_lib:format("    Keyword ~w (not yet imported, delayed)", [KeywordId]), Context),
+                Stats#stats{delayed=[{keyword, SubjectId, KeywordId}|Stats#stats.delayed]}
+        end.
+    
 
 
 convert_query(Fields, Thing, Context) ->
