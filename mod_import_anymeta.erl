@@ -111,7 +111,9 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
                         [_Kind,AnyId,[_,_] = Lang] ->
                             redirect(AnyId, Lang, Context);
                         [_Kind,AnyId] ->
-                            redirect(AnyId, undefined, Context)
+                            redirect(AnyId, undefined, Context);
+                        _ ->
+                            undefined
                     end;
                 _ ->
                     undefined
