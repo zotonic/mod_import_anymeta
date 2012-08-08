@@ -37,7 +37,7 @@
     event/2,
     
     find_any_id/2,
-    do_import/6,
+    do_import/7,
     get_thing/5,
     test_host/5
 ]).
@@ -58,12 +58,23 @@ init(Context) ->
     ensure_anymeta_type(Context),
     case z_db:table_exists(import_anymeta, Context) of
         true ->
-            ok;
+            % Conversion: Ensure that the anymeta id can be null
+            Cols = z_db:columns(import_anymeta, Context),
+            #column_def{is_nullable=IsNullable} = lists:keyfind(anymeta_id, #column_def.name, Cols),
+            case IsNullable of
+                true ->
+                    ok;
+                false ->
+                    lager:info("Changing import_anymeta.anymeta to allow null values."),
+                    [] = z_db:q("alter table import_anymeta alter column anymeta_id drop not null", Context),
+                    z_db:flush(Context), 
+                    ok
+            end;
         false ->
             [] = z_db:q("
                 create table import_anymeta (
                     uuid character varying(40) not null,
-                    anymeta_id int not null,
+                    anymeta_id int,
                     rsc_id int not null,
                     imported timestamp not null,
                     
@@ -166,10 +177,13 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             From     = z_convert:to_integer(z_context:get_q_validated("start-id", Context)),
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
-            
+            KeepId   = z_convert:to_bool(z_context:get_q("keep-id", Context)),
+
+            lager:info("Keep-id: ~p", [KeepId]),
+
             z_context:set_session(anymeta_host, Host, Context),
             
-            case do_import(Host, From, To, Username, Password, Context) of
+            case do_import(Host, From, To, Username, Password, KeepId, Context) of
                 ok ->
                     z_render:wire([{fade_in, [{target, "import-started"}]}, {hide, [{target, Form}]}], Context);
                 {error, nxdomain} ->
@@ -208,20 +222,20 @@ find_any_id(AnyId, Context) when is_integer(AnyId)->
     end.
 
 
-do_import(Host, undefined, To, Username, Password, Context) ->
-    do_import(Host, 1, To, Username, Password, Context);
-do_import(Host, From, To, Username, Password, Context) ->
+do_import(Host, undefined, To, Username, Password, KeepId, Context) ->
+    do_import(Host, 1, To, Username, Password, KeepId, Context);
+do_import(Host, From, To, Username, Password, KeepId, Context) ->
     case test_host(From, Host, Username, Password, Context) of
         ok ->
-            start_import(Host, From, To, Username, Password, Context);
+            start_import(Host, From, To, Username, Password, KeepId, Context);
         Err ->
             Err
     end.
 
-    start_import(Host, From, To, Username, Password, Context) ->
+    start_import(Host, From, To, Username, Password, KeepId, Context) ->
         ContextPruned = z_context:prune_for_async(Context),
         spawn(fun() ->
-                    import_loop(Host, From, To, Username, Password, #stats{}, ContextPruned)
+                    import_loop(Host, From, To, Username, Password, KeepId, #stats{}, ContextPruned)
               end),
         ok.
     
@@ -315,35 +329,35 @@ get_request(Method, Url, User, Pass) ->
 
 
 %% @doc Fetch all items from the given host
-import_loop(Host, _From, undefined, Username, Password, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
+import_loop(Host, _From, undefined, Username, Password, KeepId, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
     % Signal the end of the import to the UI
     progress("STOP - found more than 100 consequetive not founds.<br/>", Context),
-    handle_delayed(Delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Username, Password, Stats, Context) when is_integer(To), From > To ->
+    handle_delayed(Delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
-    handle_delayed(Stats#stats.delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Username, Password, Stats, Context) ->
+    handle_delayed(Stats#stats.delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) ->
     progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
     case get_thing(From, Host, Username, Password, Context) of
         {ok, Thing} ->
             progress(io_lib:format("~w: importing", [From]), Context),
-            Stats1 = import_thing(Host, From, Thing, Stats, Context),
+            Stats1 = import_thing(Host, From, Thing, KeepId, Stats, Context),
             Stats2 = Stats1#stats{
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
             },
-            import_loop(Host, From+1, To, Username, Password, Stats2, Context);
+            import_loop(Host, From+1, To, Username, Password, KeepId, Stats2, Context);
         {error, no_service} ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [From]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_loop(Host, From, To, Username, Password, Stats, Context);
+            import_loop(Host, From, To, Username, Password, KeepId, Stats, Context);
         {error, timeout} ->
             progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [From]), Context),
             timer:sleep(5000),
-            import_loop(Host, From, To, Username, Password, Stats, Context);
+            import_loop(Host, From, To, Username, Password, KeepId, Stats, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping to next", [From]), Context),
             Stats1 = Stats#stats{
@@ -351,25 +365,25 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
                 consequetive_notfound=Stats#stats.consequetive_notfound+1,
                 error=[{From, notfound} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Username, Password, Stats1, Context);
+            import_loop(Host, From+1, To, Username, Password, KeepId, Stats1, Context);
         {error, Reason} ->
             progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
             Stats1 = Stats#stats{
                 error=[{From, Reason} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Username, Password, Stats1, Context)
+            import_loop(Host, From+1, To, Username, Password, KeepId, Stats1, Context)
     end.
 
 
-    handle_delayed([], _Host, _Username, _Password, #stats{delayed=[]} = Stats, _Context) ->
+    handle_delayed([], _Host, _Username, _Password, _KeepId, #stats{delayed=[]} = Stats, _Context) ->
         {ok, Stats};
-    handle_delayed([], Host, Username, Password, #stats{delayed=Delayed} = Stats, Context) ->
-        handle_delayed(Delayed, Host, Username, Password, Stats#stats{delayed=[]}, Context);
-    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Username, Password, Stats, Context) ->
+    handle_delayed([], Host, Username, Password, KeepId, #stats{delayed=Delayed} = Stats, Context) ->
+        handle_delayed(Delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
+    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Username, Password, KeepId, Stats, Context) ->
         AnyId = z_convert:to_integer(AnymetaId),
         FoundId = case find_any_id(AnyId, Context) of
                     undefined ->
-                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Username, Password, Stats, Context),
+                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Username, Password, KeepId, Stats, Context),
                         find_any_id(AnyId, Context);
                     FndId ->
                         Stats1 = Stats,
@@ -382,13 +396,10 @@ import_loop(Host, From, To, Username, Password, Stats, Context) ->
             undefined ->
                 progress(io_lib:format("~w: not imported, skipping as keyword of ~w", [AnyId, RscId]), Context)
         end,
-        handle_delayed(Ds, Host, Username, Password, Stats1, Context).
+        handle_delayed(Ds, Host, Username, Password, KeepId, Stats1, Context).
 
 
-import_thing(Host, AnymetaId, Thing, Stats, Context) ->
-    % io:format("~p~n", [Thing]),
-    % ?DEBUG(proplists:get_keys(Thing)),
-
+import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
     case skip(Thing) of
         false ->
@@ -428,7 +439,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             Fields3 = fix_rsc_name(Fields2),
             FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields3, Context),
             
-            case write_rsc(AnymetaId, FieldsFinal, Stats, Context) of
+            case write_rsc(AnymetaId, FieldsFinal, KeepId, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     import_edge_kind_type(RscId, proplists:get_value(<<"kind">>, Thing), proplists:get_value(<<"type">>, Thing), Context),
                     
@@ -801,7 +812,7 @@ map_language(<<"jp">>) -> <<"ja">>;
 map_language(Code) -> Code.
 
 
-write_rsc(AnymetaId, Fields, Stats, Context) ->
+write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
     Uuid = proplists:get_value(anymeta_uuid, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
     case check_previous_import(Uuid, Context) of
@@ -809,7 +820,7 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
             Fields1 = proplists:delete(name, Fields),
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
             {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
-            register_import_anymeta_id(AnymetaId, Uuid, Context),
+            register_import_anymeta_id(KeepId, AnymetaId, Uuid, Context),
             {ok, RscId, Stats};
         none -> 
             Name = proplists:get_value(name, Fields),
@@ -828,7 +839,7 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
                     {ok, RscId} = m_rsc_update:insert(Fields, [{escape_texts, false}, is_import], Context)
             end,
-            register_import(RscId, AnymetaId, Uuid, Context),
+            register_import(KeepId, RscId, AnymetaId, Uuid, Context),
             {ok, RscId, Stats}
     end.
 
@@ -865,17 +876,35 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
             RscId -> 
                 {ok, RscId}
         end.
-        
-    register_import(RscId, AnymetaId, Uuid, Context) ->
+
+    register_import(false, RscId, _AnymetaId, Uuid, Context) ->
+        z_db:q("insert into import_anymeta (uuid, rsc_id, anymeta_id, imported)
+                values ($1, $2, null, now())",
+               [Uuid, RscId],
+               Context);
+    register_import(true, RscId, AnymetaId, Uuid, Context) ->
+        z_db:q("update import_anymeta set anymeta_id = null
+                where uuid <> $2 and anymeta_id = $1",
+               [AnymetaId, Uuid],
+               Context),
         z_db:q("insert into import_anymeta (uuid, rsc_id, anymeta_id, imported)
                 values ($1, $2, $3, now())",
                [Uuid, RscId, AnymetaId],
                Context).
                
     % Used when a resource was previously created as an edge-object stub
-    register_import_anymeta_id(AnymetaId, Uuid, Context) ->
+    register_import_anymeta_id(false, _AnymetaId, Uuid, Context) ->
+        z_db:q("update import_anymeta set anymeta_id = null
+                where uuid = $1 and anymeta_id is not null",
+               [Uuid],
+               Context);
+    register_import_anymeta_id(true, AnymetaId, Uuid, Context) ->
+        z_db:q("update import_anymeta set anymeta_id = null
+                where uuid <> $2 and anymeta_id = $1",
+               [AnymetaId, Uuid],
+               Context),
         z_db:q("update import_anymeta set anymeta_id = $1
-                where uuid = $2 and anymeta_id = 0",
+                where uuid = $2",
                [AnymetaId, Uuid],
                Context).
 
@@ -912,7 +941,7 @@ write_rsc(AnymetaId, Fields, Stats, Context) ->
                     {anymeta_host, Host}
                 ],
                 {ok, RscId} = m_rsc:insert(Ps, Context),
-                register_import(RscId, 0, Uuid, Context),
+                register_import(false, RscId, undefined, Uuid, Context),
                 progress(io_lib:format("    Edge stub for ~p (zotonic id ~w)", [Uuid, RscId]), Context),
                 RscId
         end.

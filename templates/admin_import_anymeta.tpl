@@ -15,7 +15,7 @@
 {% wire id="find-anymeta-id" type="submit" postback=`find_imported` delegate=`mod_import_anymeta` %}
 <form id="find-anymeta-id" method="post" action="postback" class="admin-form form-horizontal form-inline">
     <div class="widget">
-        <h3 class="widget-header">{_ Find an imported Anymeta id _}</h3>
+        <h3 class="widget-header">{_ Find migrated Anymeta ID _}</h3>
         <div class="widget-content">
 
             <div class="control-group">
@@ -24,6 +24,7 @@
                     <input type="text" id="imported_id" name="imported_id" value="{{ m.config.seo.keywords.value|escape }}" class="span2" />
                     {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
                     <button class="btn btn-primary" type="submit">{_ Find _}</button>
+                    <p class="help-block">{_ You can only find Anymeta IDs that were migrated. Use the UUID or the normal search to find other imports. _}</p>
                 </div>
             </div>
 
@@ -67,6 +68,17 @@
                     <input type="text" id="end-id" name="end-id" value="" class="span2" />
                 </div>
                 {% validate id="end-id" type={numericality minimum=1} %}
+            </div>
+
+            <div class="control-group">
+                <label class="control-label" for="keep-id">{_ Content migration _}</label>
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" id="keep-id" name="keep-id" value="1" />
+                        {_ Remember Anymeta ID for supporting old URLs and lookup by Anymeta ID. _}
+                    </label>
+                    <p class="help-block">{_ Check this <strong>only for the main site</strong> you are migrating from, otherwise you overwrite other imported ids. _}</p>
+                </div>
             </div>
 
             <div class="control-group">
