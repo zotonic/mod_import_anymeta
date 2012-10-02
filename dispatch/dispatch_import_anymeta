@@ -3,5 +3,6 @@
   [
    {selected, 'admin_import_anymeta'},
    {acl_module, mod_import_anymeta},
-   {template, "admin_import_anymeta.tpl"}]}
+   {template, "admin_import_anymeta.tpl"}]},
+   {ssl, true}
 ].
