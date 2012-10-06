@@ -1,0 +1,176 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+# NB: Consider using poEdit <http://poedit.sourceforge.net>
+#
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:13 
+msgid ""
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_import_anymeta_admin_edit_sidebar.tpl:3 ./priv/modules/mod_import_anymeta/templates/_admin_menu_module.tpl:2 
+msgid ""
+"Anymeta Import"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_admin_edit_basics_form.tpl:17 
+msgid ""
+"Chapeau"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:80 
+msgid ""
+"Check this <strong>only for the main site</strong> you are migrating from, "
+"otherwise you overwrite other imported ids."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:74 
+msgid ""
+"Content migration"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:54 
+msgid ""
+"Could not start import, the hostname could not be found."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:92 
+msgid ""
+"Could not start import, unexpected result from remote server."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:22 
+msgid ""
+"External Anymeta ID"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:26 
+msgid ""
+"Find"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:18 
+msgid ""
+"Find migrated Anymeta ID"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:58 
+msgid ""
+"From Anymeta ID"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:10 
+msgid ""
+"Here you can import data from an Anymeta site into this Zotonic site."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:50 
+msgid ""
+"Hostname of Anymeta site (without “http://”)"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:3 
+msgid ""
+"Import Anymeta Data"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:46 
+msgid ""
+"Import data"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:8 
+msgid ""
+"Import data from an Anymeta site"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:105 
+msgid ""
+"Messages from the import"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:85 
+msgid ""
+"Optional sysadmin password"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:107 
+msgid ""
+"Progress messages from running imports are shown here."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:78 
+msgid ""
+"Remember Anymeta ID for supporting old URLs and lookup by Anymeta ID."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_admin_edit_basics_form.tpl:51 
+msgid ""
+"Short title"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/mod_import_anymeta.erl:173 
+msgid ""
+"Sorry, you are not allowed to use the Anymeta import module."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:97 
+msgid ""
+"Start Import"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_admin_edit_basics_form.tpl:28 
+msgid ""
+"Subtitle"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_admin_edit_basics_form.tpl:40 
+msgid ""
+"Summary"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:40 
+msgid ""
+"The import has started, come back here for more information about the "
+"progress of your import."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:32 
+msgid ""
+"This id has not been imported."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_admin_edit_basics_form.tpl:5 
+msgid ""
+"Title"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:66 
+msgid ""
+"To Anymeta ID"
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:27 
+msgid ""
+"You can only find Anymeta IDs that were migrated. Use the UUID or the "
+"normal search to find other imports."
+msgstr ""
+
+#: ./priv/modules/mod_import_anymeta/templates/_import_anymeta_admin_edit_sidebar.tpl:10 
+msgid ""
+"view in new window"
+msgstr ""
