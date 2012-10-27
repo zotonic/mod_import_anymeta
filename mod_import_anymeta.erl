@@ -150,7 +150,7 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
                         undefined;
                     URL ->
                         {ok, #dispatch_match{
-                            mod=resource_redirect,
+                            mod=controller_redirect,
                             mod_opts=[{url, URL}, {is_permanent, true}],
                             bindings=[]
                         }}

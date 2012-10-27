@@ -1,5 +1,5 @@
 [
- {admin_import_anymeta, ["admin", "import-anymeta"], resource_admin,
+ {admin_import_anymeta, ["admin", "import-anymeta"], controller_admin,
   [
    {selected, 'admin_import_anymeta'},
    {acl_module, mod_import_anymeta},
