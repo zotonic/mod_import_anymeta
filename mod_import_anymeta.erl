@@ -111,8 +111,13 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
     % (...)/(article|artefact|...)-<id>-<language>.html
     % (...)/(article|artefact|...)-<id>.html
     % (...)/id.php/(uuid|id|name)
+    % index.php
     Parts = string:tokens(Path, "/"),
+    ?DEBUG(Parts),
     case lists:reverse(Parts) of
+        ["index.php"] ->
+            ContextQs = z_context:ensure_qs(Context),
+            redirect_rsc(m_rsc:rid(page_home, ContextQs), z_context:get_q("lang", ContextQs), ContextQs);
         [AnyId,"id.php"|_] ->
             redirect(AnyId, undefined, Context);
         [Rsc|_] ->
@@ -135,26 +140,31 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
         case find_any_id(AnyId, Context) of
             undefined -> 
                 undefined;
-            {ok, RscId} -> 
-                Lang1 = map_language(Lang),
-                case z_trans:is_language(Lang1) of
-                    true ->
-                        % Add language
-                        Context1 = z_context:set_language(list_to_atom(Lang1), Context);
-                    false ->
-                        % Ignore language
-                        Context1 = Context
-                end,
-                case m_rsc:p(RscId, page_url, Context1) of
-                    undefined ->
-                        undefined;
-                    URL ->
-                        {ok, #dispatch_match{
-                            mod=controller_redirect,
-                            mod_opts=[{url, URL}, {is_permanent, true}],
-                            bindings=[]
-                        }}
-                end
+            {ok, RscId} ->
+                redirect_rsc(RscId, Lang, Context)
+        end.
+
+    redirect_rsc(undefined, _Lang, _Context) ->
+        undefined;
+    redirect_rsc(RscId, Lang, Context) ->
+        Lang1 = map_language(Lang),
+        Context1 = case z_trans:is_language(Lang1) of
+                     true ->
+                         % Add language
+                         z_context:set_language(list_to_atom(Lang1), Context);
+                     false ->
+                         % Ignore language
+                         Context
+                   end,
+        case m_rsc:p(RscId, page_url, Context1) of
+            undefined ->
+                undefined;
+            URL ->
+                {ok, #dispatch_match{
+                    mod=controller_redirect,
+                    mod_opts=[{url, URL}, {is_permanent, true}],
+                    bindings=[]
+                }}
         end.
 
 event(#submit{message=find_imported}, Context) ->
