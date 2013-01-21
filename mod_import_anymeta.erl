@@ -113,7 +113,6 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
     % (...)/id.php/(uuid|id|name)
     % index.php
     Parts = string:tokens(Path, "/"),
-    ?DEBUG(Parts),
     case lists:reverse(Parts) of
         ["index.php"] ->
             ContextQs = z_context:ensure_qs(Context),
