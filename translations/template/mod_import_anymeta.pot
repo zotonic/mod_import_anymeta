@@ -98,6 +98,11 @@ msgid ""
 "Import data from an Anymeta site"
 msgstr ""
 
+#: ./priv/modules/mod_import_anymeta/mod_import_anymeta.erl:101 
+msgid ""
+"Import from Anymeta"
+msgstr ""
+
 #: ./priv/modules/mod_import_anymeta/templates/admin_import_anymeta.tpl:105 
 msgid ""
 "Messages from the import"
@@ -123,7 +128,7 @@ msgid ""
 "Short title"
 msgstr ""
 
-#: ./priv/modules/mod_import_anymeta/mod_import_anymeta.erl:173 
+#: ./priv/modules/mod_import_anymeta/mod_import_anymeta.erl:182 
 msgid ""
 "Sorry, you are not allowed to use the Anymeta import module."
 msgstr ""

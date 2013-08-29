@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2011-2012 Marc Worrell
+%% @copyright 2011-2013 Marc Worrell
 %% @doc Import data from an Anymeta website
 
-%% Copyright 2011-2012 Marc Worrell
+%% Copyright 2011-2013 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -132,7 +132,9 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
                     end;
                 _ ->
                     undefined
-            end
+            end;
+        [] ->
+            undefined
     end.
 
     redirect(AnyId, Lang, Context) ->
