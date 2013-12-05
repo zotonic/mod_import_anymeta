@@ -11,6 +11,15 @@ It can import data from anyMeta sites.
 
 anyMeta is an information management system made by [Mediamatic Lab](http://www.mediamatic.nl/)
 
+All data is fetched using the anyMeta thing API: http://example.com/thing/12345?format=json Where 12345 is the id of the to be exported page.
+
+When importing you can supply a range of ids to be imported. If only the start of the range is filled in then the import will continue till it finds 100 consecutive not founds, at which point it will stop.
+
+It is safe to re-run the import, as the module keeps a mapping of Anymeta UUID to Zotonic resource id.
+
+Optionally you dan supply the sysadmin password of the anyMeta site to import non-public data.
+
+
 Database
 --------
 
