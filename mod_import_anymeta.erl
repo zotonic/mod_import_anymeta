@@ -1,6 +1,6 @@
-%% @author Marc Worrell + Fred Pook <marc@worrell.nl>
+%% @author Marc Worrell <marc@worrell.nl>
 %% @copyright 2011-2013 Marc Worrell
-%% @doc Import data from an Anymeta website
+%% @doc Import data from an Anymeta 4.19 website
 
 %% Copyright 2011-2013 Marc Worrell
 %%
@@ -26,7 +26,7 @@
 -author("Marc Worrell <marc@worrell.nl>").
 
 -mod_title("Import Anymeta Site").
--mod_description("Import data from an Anymeta web site.").
+-mod_description("Import data from an Anymeta 4.19 web site.").
 -mod_prio(300).
 
 -export([
@@ -676,11 +676,12 @@ map_fields([{<<"create_date">>, Date}|T], Acc) ->
 map_fields([{<<"modify_date">>, Date}|T], Acc) ->
     map_fields(T, [{modified, convert_datetime(Date)}|Acc]);
 map_fields([{<<"coverage">>, {struct, Cs}}|T], Acc) ->
-    % TODO: map the location GPS to zotonic props
     % Time & location
     Acc1 = lists:foldl(
         fun({<<"date_start">>, D}, A) -> [ {date_start, convert_datetime(D)} | A ];
            ({<<"date_end">>, D}, A) -> [ {date_end, convert_datetime(D)} | A ];
+           ({<<"geometry_long">>, D}, A) -> [ {location_lng, D} | A ];
+           ({<<"geometry_lat">>, D}, A) -> [ {location_lat, D} | A ];
            (_, A) -> A
         end,
         Acc,
