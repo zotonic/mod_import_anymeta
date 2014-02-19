@@ -593,7 +593,7 @@ map_texts(Lang, Ts) ->
                 {summary_html, z_string:trim(T)}
             ];
 
-    % TODO: map the wiki refs to Zotonic html
+    % TODO: internal links and inline image links in texts should be mapped to zotonic links
     map_text_field(<<"body">>, T) ->
         {body, T};
     map_text_field(<<"redirect_uri">>, T) ->
