@@ -39,9 +39,9 @@
     event/2,
     
     find_any_id/2,
-    do_import/7,
-    get_thing/5,
-    test_host/5
+    do_import/6,
+    get_thing/4,
+    test_host/4
 ]).
 
 -include_lib("zotonic.hrl").
@@ -254,7 +254,7 @@ do_import(Host, From, To, Secret, KeepId, Context) ->
     test_host(From, Host, Secret, Context) ->
         Url = get_url(From, Host, Secret),
         progress(io_lib:format("TEST HOST: pinging ~p ...", [Url]), Context),
-        case get_request(get, Url, Secret) of
+        case get_request(get, Url) of
             {ok, {{_, 200, _},Hs, _}} ->
                 progress("TEST HOST: 200 OK", Context),
                 case proplists:get_value("content-type", Hs) of
@@ -295,7 +295,7 @@ get_url(Id, Host, Secret) ->
 
 get_thing(Id, Hostname, Secret, Context) ->
     Url = get_url(Id, Hostname, Secret),
-    case get_request(get, Url, Secret) of
+    case get_request(get, Url) of
         {ok, {
             {_HTTP, 200, _OK},
             Headers,
@@ -329,17 +329,9 @@ get_thing(Id, Hostname, Secret, Context) ->
             {error, unexpected_result}
     end.
 
-get_request(Method, Url, Secret) ->
-    Headers = auth_header(User, Pass),
+get_request(Method, Url) ->
+    Headers = [],
     httpc:request(Method, {Url, Headers}, [{autoredirect, true}, {relaxed, true}, {timeout, 60000}], []).
-
-    auth_header(undefined, undefined) ->
-        [];
-    auth_header([], []) ->
-        [];
-    auth_header(User, Pass) ->
-        Encoded = base64:encode_to_string(lists:append([User,":",Pass])),
-        [{"Authorization","Basic " ++ Encoded}].
 
 
 %% @doc Fetch all items from the given host
