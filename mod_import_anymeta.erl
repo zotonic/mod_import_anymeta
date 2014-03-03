@@ -37,9 +37,9 @@
     event/2,
     
     find_any_id/2,
-    do_import/7,
-    get_thing/5,
-    test_host/5
+    do_import/6,
+    get_thing/4,
+    test_host/4
 ]).
 
 -include_lib("zotonic.hrl").
@@ -73,7 +73,7 @@ init(Context) ->
         false ->
             [] = z_db:q("
                 create table import_anymeta (
-                    uuid character varying(40) not null,
+                    uuid character varying(100) not null,
                     anymeta_id int,
                     rsc_id int not null,
                     imported timestamp not null,
@@ -183,18 +183,17 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
         false ->
             z_render:growl_error(?__("Sorry, you are not allowed to use the Anymeta import module.", Context), Context);
         true ->
-            Password = z_string:trim(z_context:get_q("sysadmin-pw", Context)),
-            Username = case Password of [] -> []; _ -> "sysadmin" end,
+            Secret   = z_string:trim(z_context:get_q("sysadmin-pw", Context)),
             From     = z_convert:to_integer(z_context:get_q_validated("start-id", Context)),
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
             KeepId   = z_convert:to_bool(z_context:get_q("keep-id", Context)),
 
-            lager:info("Keep-id: ~p", [KeepId]),
+            lager:info("Anymeta import started (keep anymeta ids: ~p)", [KeepId]),
 
             z_context:set_session(anymeta_host, Host, Context),
             
-            case do_import(Host, From, To, Username, Password, KeepId, Context) of
+            case do_import(Host, From, To, Secret, KeepId, Context) of
                 ok ->
                     z_render:wire([{fade_in, [{target, "import-started"}]}, {hide, [{target, Form}]}], Context);
                 {error, nxdomain} ->
@@ -233,27 +232,27 @@ find_any_id(AnyId, Context) when is_integer(AnyId)->
     end.
 
 
-do_import(Host, undefined, To, Username, Password, KeepId, Context) ->
-    do_import(Host, 1, To, Username, Password, KeepId, Context);
-do_import(Host, From, To, Username, Password, KeepId, Context) ->
-    case test_host(From, Host, Username, Password, Context) of
+do_import(Host, undefined, To, Secret, KeepId, Context) ->
+    do_import(Host, 1, To, Secret, KeepId, Context);
+do_import(Host, From, To, Secret, KeepId, Context) ->
+    case test_host(From, Host, Secret, Context) of
         ok ->
-            start_import(Host, From, To, Username, Password, KeepId, Context);
+            start_import(Host, From, To, Secret, KeepId, Context);
         Err ->
             Err
     end.
 
-    start_import(Host, From, To, Username, Password, KeepId, Context) ->
+    start_import(Host, From, To, Secret, KeepId, Context) ->
         ContextPruned = z_context:prune_for_async(Context),
         spawn(fun() ->
-                    import_loop(Host, From, To, Username, Password, KeepId, #stats{}, ContextPruned)
+                    import_loop(Host, From, To, Secret, KeepId, #stats{}, ContextPruned)
               end),
         ok.
     
-    test_host(From, Host, Username, Password, Context) ->
-        Url = get_url(From, Host),
+    test_host(From, Host, Secret, Context) ->
+        Url = get_url(From, Host, Secret),
         progress(io_lib:format("TEST HOST: pinging ~p ...", [Url]), Context),
-        case get_request(head, Url, Username, Password) of
+        case get_request(get, Url) of
             {ok, {{_, 200, _},Hs, _}} ->
                 progress("TEST HOST: 200 OK", Context),
                 case proplists:get_value("content-type", Hs) of
@@ -289,12 +288,12 @@ do_import(Host, From, To, Username, Password, KeepId, Context) ->
         end.
 
 
-get_url(Id, Host) ->
-    "http://"++Host++"/thing/"++integer_to_list(Id)++"?format=json".
+get_url(Id, Host, Secret) ->
+    "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret.
 
-get_thing(Id, Hostname, User, Pass, Context) ->
-    Url = get_url(Id, Hostname),
-    case get_request(get, Url, User, Pass) of
+get_thing(Id, Hostname, Secret, Context) ->
+    Url = get_url(Id, Hostname, Secret),
+    case get_request(get, Url) of
         {ok, {
             {_HTTP, 200, _OK},
             Headers,
@@ -319,38 +318,34 @@ get_thing(Id, Hostname, User, Pass, Context) ->
             Err;
         {ok, {{_, 503, _}, _, _}} ->
             {error, no_service};
+        {ok, {{_, 410, _}, _, _}} ->
+            {error, gone};
         {ok, {{_, 404, _}, _, _}} ->
             {error, not_found};
+        {ok, {{_, 401, _}, _, _}} ->
+            {error, unauthorized};
         {ok, Other} ->
             progress(io_lib:format("FAIL! ~p Unexpected Result<br/>~p", [Url, Other]), Context),
             {error, unexpected_result}
     end.
 
-get_request(Method, Url, User, Pass) ->
-    Headers = auth_header(User, Pass),
+get_request(Method, Url) ->
+    Headers = [],
     httpc:request(Method, {Url, Headers}, [{autoredirect, true}, {relaxed, true}, {timeout, 60000}], []).
-
-    auth_header(undefined, undefined) ->
-        [];
-    auth_header([], []) ->
-        [];
-    auth_header(User, Pass) ->
-        Encoded = base64:encode_to_string(lists:append([User,":",Pass])),
-        [{"Authorization","Basic " ++ Encoded}].
 
 
 %% @doc Fetch all items from the given host
-import_loop(Host, _From, undefined, Username, Password, KeepId, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
+import_loop(Host, _From, undefined, Secret, KeepId, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
     % Signal the end of the import to the UI
     progress("STOP - found more than 100 consequetive not founds.<br/>", Context),
-    handle_delayed(Delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) when is_integer(To), From > To ->
+    handle_delayed(Delayed, Host, Secret, KeepId, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Secret, KeepId, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
-    handle_delayed(Stats#stats.delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) ->
+    handle_delayed(Stats#stats.delayed, Host, Secret, KeepId, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Secret, KeepId, Stats, Context) ->
     progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
-    case get_thing(From, Host, Username, Password, Context) of
+    case get_thing(From, Host, Secret, Context) of
         {ok, Thing} ->
             progress(io_lib:format("~w: importing", [From]), Context),
             Stats1 = import_thing(Host, From, Thing, KeepId, Stats, Context),
@@ -358,17 +353,17 @@ import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) ->
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
             },
-            import_loop(Host, From+1, To, Username, Password, KeepId, Stats2, Context);
+            import_loop(Host, From+1, To, Secret, KeepId, Stats2, Context);
         {error, no_service} ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [From]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_loop(Host, From, To, Username, Password, KeepId, Stats, Context);
+            import_loop(Host, From, To, Secret, KeepId, Stats, Context);
         {error, timeout} ->
             progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [From]), Context),
             timer:sleep(5000),
-            import_loop(Host, From, To, Username, Password, KeepId, Stats, Context);
+            import_loop(Host, From, To, Secret, KeepId, Stats, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping to next", [From]), Context),
             Stats1 = Stats#stats{
@@ -376,25 +371,25 @@ import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) ->
                 consequetive_notfound=Stats#stats.consequetive_notfound+1,
                 error=[{From, notfound} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Username, Password, KeepId, Stats1, Context);
+            import_loop(Host, From+1, To, Secret, KeepId, Stats1, Context);
         {error, Reason} ->
             progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
             Stats1 = Stats#stats{
                 error=[{From, Reason} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Username, Password, KeepId, Stats1, Context)
+            import_loop(Host, From+1, To, Secret, KeepId, Stats1, Context)
     end.
 
 
-    handle_delayed([], _Host, _Username, _Password, _KeepId, #stats{delayed=[]} = Stats, _Context) ->
+    handle_delayed([], _Host, _Secret, _KeepId, #stats{delayed=[]} = Stats, _Context) ->
         {ok, Stats};
-    handle_delayed([], Host, Username, Password, KeepId, #stats{delayed=Delayed} = Stats, Context) ->
-        handle_delayed(Delayed, Host, Username, Password, KeepId, Stats#stats{delayed=[]}, Context);
-    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Username, Password, KeepId, Stats, Context) ->
+    handle_delayed([], Host, Secret, KeepId, #stats{delayed=Delayed} = Stats, Context) ->
+        handle_delayed(Delayed, Host, Secret, KeepId, Stats#stats{delayed=[]}, Context);
+    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Secret, KeepId, Stats, Context) ->
         AnyId = z_convert:to_integer(AnymetaId),
         FoundId = case find_any_id(AnyId, Context) of
                     undefined ->
-                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Username, Password, KeepId, Stats, Context),
+                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Secret, KeepId, Stats, Context),
                         find_any_id(AnyId, Context);
                     FndId ->
                         Stats1 = Stats,
@@ -407,7 +402,7 @@ import_loop(Host, From, To, Username, Password, KeepId, Stats, Context) ->
             undefined ->
                 progress(io_lib:format("~w: not imported, skipping as keyword of ~w", [AnyId, RscId]), Context)
         end,
-        handle_delayed(Ds, Host, Username, Password, KeepId, Stats1, Context).
+        handle_delayed(Ds, Host, Secret, KeepId, Stats1, Context).
 
 
 import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
@@ -425,7 +420,7 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
             Fields0 = [
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
-                        {anymeta_uuid, proplists:get_value(<<"thg_uuid">>, Thing)},
+                        {anymeta_uuid, proplists:get_value(<<"resource_uri">>, Thing)},
                         {anymeta_host, Host},
                         {language, Langs}
                         |OtherFields
@@ -1039,7 +1034,7 @@ import_edge(Host, SubjectId, {struct, Props}, Stats, Context) ->
                 P -> P
             end,
             ensure_predicate(P1, Context),
-            ObjectUuid = proplists:get_value(<<"object_uuid">>, Edge),
+            ObjectUuid = proplists:get_value(<<"object_id">>, Edge),
             ObjectId = ensure_uuid(Host, ObjectUuid, Context),
             progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
             {ok, _} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
