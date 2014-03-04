@@ -479,16 +479,22 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
             undefined ->
                 true;
             _ ->
-                case proplists:get_value(<<"uri">>, Thing) of
-                    <<"javascript:any_action", _/binary>> -> true;
-                    <<"../admin.php", _/binary>> -> true;
-                    _ ->
-                        % TODO: add a callback for skippable kinds
-                        case proplists:get_value(<<"kind">>, Thing) of
-                            <<"ROLE">> -> true;
-                            <<"TYPE">> -> false;
-                            <<"LANGUAGE">> -> true;
-                            _ -> false
+                case is_empty(proplists:get_value(<<"lang">>, Thing)) of
+                    true ->
+                        true;
+                        _ ->
+                        case proplists:get_value(<<"uri">>, Thing) of
+                            <<"javascript:any_action", _/binary>> -> true;
+                            <<"../admin.php", _/binary>> -> true;
+                            _ ->
+                                % TODO: add a callback for skippable kinds
+                                case proplists:get_value(<<"kind">>, Thing) of
+                                    <<"UNKNOWN">> -> true;
+                                    <<"ROLE">> -> true;
+                                    <<"TYPE">> -> false;
+                                    <<"LANGUAGE">> -> true;
+                                    _ -> false
+                                end
                         end
                 end
         end.
