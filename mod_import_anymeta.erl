@@ -452,13 +452,14 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
+
                     case proplists:get_value(<<"file">>, Thing) of
                         undefined ->
                             Stats3;
                         {struct, File} -> 
-							Filename = proplists:get_value(<<"original_file">>, File),
-							case proplists:get_value(<<"file_blob">>, File) of
-								undefined ->
+                            Filename = proplists:get_value(<<"original_file">>, File),
+                            case proplists:get_value(<<"file_blob">>, File) of
+                                undefined ->
                                     case proplists:get_value(<<"uri">>, File) of
                                         undefined ->
                                             Stats3;
@@ -466,16 +467,16 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
                                             % TO DO save the file from url ? m_media:replace_url(Url, RscId, [], Context),
                                             Stats3
                                     end;
-								{struct, Fileblob} -> 
-									{struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
-									case proplists:get_value(<<"encode">>, Fileblob) of
-										<<"base64">> ->
-											Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
-											write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
-										Encoding ->
-											Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
-								   end
-							end
+                                {struct, Fileblob} -> 
+                                    {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
+                                    case proplists:get_value(<<"encode">>, Fileblob) of
+                                        <<"base64">> ->
+                                            Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
+                                            write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
+                                        Encoding ->
+                                        Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
+                                    end
+                            end
                     end;
                 {error, Stats1} ->
                     Stats1
