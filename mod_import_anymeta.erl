@@ -464,7 +464,8 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
                                         undefined ->
                                             Stats3;
                                         _ ->
-                                            % TO DO save the file from url ? m_media:replace_url(Url, RscId, [], Context),
+                                            Url = proplists:get_value(<<"uri">>, File),
+                                            m_media:replace_url(Url, RscId, [], Context),
                                             Stats3
                                     end;
                                 {struct, Fileblob} -> 
