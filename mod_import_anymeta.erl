@@ -456,15 +456,26 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
                         undefined ->
                             Stats3;
                         {struct, File} -> 
-                            Filename = proplists:get_value(<<"original_file">>, File),
-                            {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
-                            case proplists:get_value(<<"encode">>, Fileblob) of
-                                <<"base64">> ->
-                                    Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
-                                    write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
-                                Encoding ->
-                                    Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
-                           end
+							Filename = proplists:get_value(<<"original_file">>, File),
+							case proplists:get_value(<<"file_blob">>, File) of
+								undefined ->
+                                    case proplists:get_value(<<"uri">>, File) of
+                                        undefined ->
+                                            Stats3;
+                                        _ ->
+                                            % TO DO save the file from url ? m_media:replace_url(Url, RscId, [], Context),
+                                            Stats3
+                                    end;
+								{struct, Fileblob} -> 
+									{struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
+									case proplists:get_value(<<"encode">>, Fileblob) of
+										<<"base64">> ->
+											Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
+											write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
+										Encoding ->
+											Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
+								   end
+							end
                     end;
                 {error, Stats1} ->
                     Stats1
@@ -840,6 +851,10 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
                 {ok, RscId} ->
                     progress(io_lib:format("~w: exists, updating (name: ~p, zotonic id: ~w)", [AnymetaId, Name, RscId]), Context),
                     {ok, RscId} = m_rsc_update:update(RscId, Fields, [{escape_texts, false}, is_import], Context);
+                numeric ->
+                    Fields1 = proplists:delete(name, Fields),
+                    progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
+                    {ok, RscId} = m_rsc_update:insert(Fields1, [{escape_texts, false}, is_import], Context);
                 clash ->
                     Name = proplists:get_value(name, Fields),
                     Fields1 = proplists:delete(name, Fields),
@@ -925,17 +940,21 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
             undefined ->
                 none;
             Name ->
-                case m_rsc:name_to_id(Name, Context) of
-                    {ok, RscId} ->
-                        Category = z_convert:to_binary(proplists:get_value(category, Fields)),
-                        case z_convert:to_binary(proplists:get_value(name, m_rsc:p(RscId, category, Context))) of
-                            Category ->
-                                {ok, RscId};
-                            _Other ->
-                                clash
-                        end;
-                    _ ->
-                        none
+                case z_utils:only_digits(Name) of
+                    true  -> numeric;
+                    false -> 
+                        case m_rsc:name_to_id(Name, Context) of
+                            {ok, RscId} ->
+                                Category = z_convert:to_binary(proplists:get_value(category, Fields)),
+                                case z_convert:to_binary(proplists:get_value(name, m_rsc:p(RscId, category, Context))) of
+                                    Category ->
+                                        {ok, RscId};
+                                    _Other ->
+                                        clash
+                                end;
+                            _ ->
+                                none
+                        end
                 end
         end.
 
