@@ -21,7 +21,7 @@
             <div class="control-group">
                 <label class="control-label" for="imported_id">{_ External Anymeta ID _}</label>
                 <div class="controls">
-                    <input type="text" id="imported_id" name="imported_id" value="{{ m.config.seo.keywords.value|escape }}" class="span2" />
+                    <input type="text" id="imported_id" name="imported_id" value="" class="span2" />
                     {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
                     <button class="btn btn-primary" type="submit">{_ Find _}</button>
                     <p class="help-block">{_ You can only find Anymeta IDs that were migrated. Use the UUID or the normal search to find other imports. _}</p>
