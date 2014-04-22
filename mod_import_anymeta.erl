@@ -38,8 +38,9 @@
     
     find_any_id/2,
     do_import/6,
+    test_host/4,
     get_thing/4,
-    test_host/4
+    test/1
 ]).
 
 -include_lib("zotonic.hrl").
@@ -73,12 +74,12 @@ init(Context) ->
         false ->
             [] = z_db:q("
                 create table import_anymeta (
-                    uuid character varying(100) not null,
+                    rsc_uri character varying(255) not null,
                     anymeta_id int,
                     rsc_id int not null,
                     imported timestamp not null,
                     
-                    constraint import_anymeta_pkey primary key (uuid),
+                    constraint import_anymeta_pkey primary key (rsc_uri),
                     constraint fk_import_anymeta_rsc_id foreign key (rsc_id)
                         references rsc(id)
                         on update cascade
@@ -215,11 +216,11 @@ find_any_id(AnyId, Context) when is_list(AnyId) ->
                 RscId -> {ok, RscId}
             end;
         false ->
-            % UUID or name
+            % rsc uri or name
             case m_rsc:name_to_id(AnyId, Context) of
                 {ok, RscId} -> {ok, RscId};
                 {error, _} ->
-                    case z_db:q1("select rsc_id from import_anymeta where uuid = $1", [AnyId], Context) of
+                    case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [AnyId], Context) of
                         undefined -> undefined;
                         RscId -> {ok, RscId}
                     end
@@ -410,6 +411,7 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
     case skip(Thing) of
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
+            RscUri = proplists:get_value(<<"resource_uri">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
             Texts2 = group_by_lang(Texts1),
             Websites = proplists:get_value(website, Texts2),
@@ -420,7 +422,7 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
             Fields0 = [
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
-                        {anymeta_uuid, proplists:get_value(<<"resource_uri">>, Thing)},
+                        {anymeta_rsc_uri, RscUri},
                         {anymeta_host, Host},
                         {language, Langs}
                         |OtherFields
@@ -839,14 +841,14 @@ map_language(Code) -> Code.
 
 
 write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
-    Uuid = proplists:get_value(anymeta_uuid, Fields),
+    RscUri = proplists:get_value(anymeta_rsc_uri, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
-    case check_previous_import(Uuid, Context) of
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             Fields1 = proplists:delete(name, Fields),
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
             {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
-            register_import_anymeta_id(KeepId, AnymetaId, Uuid, Context),
+            register_import_anymeta_id(KeepId, AnymetaId, RscUri, Context),
             {ok, RscId, Stats};
         none -> 
             Name = proplists:get_value(name, Fields),
@@ -869,7 +871,7 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
                     {ok, RscId} = m_rsc_update:insert(Fields, [{escape_texts, false}, is_import], Context)
             end,
-            register_import(KeepId, RscId, AnymetaId, Uuid, Context),
+            register_import(KeepId, RscId, AnymetaId, RscUri, Context),
             {ok, RscId, Stats}
     end.
 
@@ -899,43 +901,43 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
         end.
 
 
-    check_previous_import(Uuid, Context) ->
-        case z_db:q1("select rsc_id from import_anymeta where uuid = $1", [Uuid], Context) of
+    check_previous_import(RscUri, Context) ->
+        case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [RscUri], Context) of
             undefined ->
                 none;
             RscId -> 
                 {ok, RscId}
         end.
 
-    register_import(false, RscId, _AnymetaId, Uuid, Context) ->
-        z_db:q("insert into import_anymeta (uuid, rsc_id, anymeta_id, imported)
+    register_import(false, RscId, _AnymetaId, RscUri, Context) ->
+        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, imported)
                 values ($1, $2, null, now())",
-               [Uuid, RscId],
+               [RscUri, RscId],
                Context);
-    register_import(true, RscId, AnymetaId, Uuid, Context) ->
+    register_import(true, RscId, AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set anymeta_id = null
-                where uuid <> $2 and anymeta_id = $1",
-               [AnymetaId, Uuid],
+                where rsc_uri <> $2 and anymeta_id = $1",
+               [AnymetaId, RscUri],
                Context),
-        z_db:q("insert into import_anymeta (uuid, rsc_id, anymeta_id, imported)
+        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, imported)
                 values ($1, $2, $3, now())",
-               [Uuid, RscId, AnymetaId],
+               [RscUri, RscId, AnymetaId],
                Context).
                
     % Used when a resource was previously created as an edge-object stub
-    register_import_anymeta_id(false, _AnymetaId, Uuid, Context) ->
+    register_import_anymeta_id(false, _AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set anymeta_id = null
-                where uuid = $1 and anymeta_id is not null",
-               [Uuid],
+                where rsc_uri = $1 and anymeta_id is not null",
+               [RscUri],
                Context);
-    register_import_anymeta_id(true, AnymetaId, Uuid, Context) ->
+    register_import_anymeta_id(true, AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set anymeta_id = null
-                where uuid <> $2 and anymeta_id = $1",
-               [AnymetaId, Uuid],
+                where rsc_uri <> $2 and anymeta_id = $1",
+               [AnymetaId, RscUri],
                Context),
         z_db:q("update import_anymeta set anymeta_id = $1
-                where uuid = $2",
-               [AnymetaId, Uuid],
+                where rsc_uri = $2",
+               [AnymetaId, RscUri],
                Context).
 
     check_existing_rsc(Fields, Context) ->
@@ -961,8 +963,8 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
                 end
         end.
 
-    ensure_uuid(Host, Uuid, Context) ->
-        case check_previous_import(Uuid, Context) of
+    ensure_rsc_uri(Host, RscUri, Context) ->
+        case check_previous_import(RscUri, Context) of
             {ok, RscId} ->
                 RscId;
             none ->
@@ -970,13 +972,13 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
                     {category, other},
                     {is_published, false},
                     {visible_for, 1},
-                    {title, iolist_to_binary(["Edge object stub: ",Uuid])},
-                    {anymeta_uuid, Uuid},
+                    {title, iolist_to_binary(["Edge object stub: ",RscUri])},
+                    {anymeta_rsc_uri, RscUri},
                     {anymeta_host, Host}
                 ],
                 {ok, RscId} = m_rsc:insert(Ps, Context),
-                register_import(false, RscId, undefined, Uuid, Context),
-                progress(io_lib:format("    Edge stub for ~p (zotonic id ~w)", [Uuid, RscId]), Context),
+                register_import(false, RscId, undefined, RscUri, Context),
+                progress(io_lib:format("    Edge stub for ~p (zotonic id ~w)", [RscUri, RscId]), Context),
                 RscId
         end.
 
@@ -1062,8 +1064,8 @@ import_edge(Host, SubjectId, {struct, Props}, Stats, Context) ->
                 P -> P
             end,
             ensure_predicate(P1, Context),
-            ObjectUuid = proplists:get_value(<<"object_id">>, Edge),
-            ObjectId = ensure_uuid(Host, ObjectUuid, Context),
+            ObjectRscUri = proplists:get_value(<<"object_id">>, Edge),
+            ObjectId = ensure_rsc_uri(Host, ObjectRscUri, Context),
             progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
             {ok, _} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
             Stats
@@ -1200,6 +1202,7 @@ convert_query(Fields, Thing, Context) ->
 
 %% @doc Show progress in the progress area of the import window.
 progress(Message, Context) ->
+    ?zInfo(Message, Context),
     mod_signal:emit_script({import_anymeta_progress, []}, 
                            z_render:wire({insert_top, [{target, "progress"}, {text, [Message,"<br/>"]}]}, Context)).
 
@@ -1218,4 +1221,36 @@ ensure_anymeta_type(Context) ->
                               ],
                               Context)
     end.
+    
+
+test(Context0) ->
+    Context = z_acl:sudo(Context0),
+    init(Context),
+    
+    Host = "test.com",
+    %%case catch mochijson2:decode(z_string:sanitize_utf8(Body)) of
+
+    Files = filelib:wildcard(code:lib_dir(zotonic) ++ "/priv/modules/mod_import_anymeta/testdata/*.json"),
+    FilesWithThingId = lists:zip(lists:seq(1000, 1000+length(Files)-1), Files),
+    
+    Stats1 =
+        lists:foldl(
+          fun({ThingId, Filename}, Stats) ->
+                  {ok, Body} = file:read_file(Filename),
+                  {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
+                  Stats1 = import_thing(Host, ThingId, Thing, true, Stats, Context),
+                  Stats1#stats{
+                    found=Stats#stats.found+1, 
+                    consequetive_notfound=0
+                   }
+          end,
+          #stats{},
+          FilesWithThingId
+         ),
+
+    %%Stats = handle_delayed(Stats1#stats.delayed, Host, [], [], true, Stats1#stats{delayed=[]}, Context),
+    Stats = Stats1,
+    io:format("Test stats: ~p~n", [Stats]),
+    ok. 
+
     
