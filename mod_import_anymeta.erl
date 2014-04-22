@@ -798,21 +798,24 @@ fix_html_summary(Props) ->
         end;
     is_non_p_html(_) -> false.
 
-map_kind_type(<<"ROLE">>, _) -> predicate;
-map_kind_type(<<"TYPE">>, _) -> anymeta_type;
-map_kind_type(<<"ATTACHMENT">>, _) -> media;
-map_kind_type(<<"ARTICLE">>, _) -> article;
 map_kind_type(<<"ARTEFACT">>, _) -> artifact;
-map_kind_type(<<"LISTPUBLISH">>, _) -> 'query';
-map_kind_type(<<"LISTEDIT">>, _) -> 'query';
-map_kind_type(<<"LANGUAGE">>, _) -> language;
+map_kind_type(<<"ARTICLE">>, _) -> article;
+map_kind_type(<<"ATTACHMENT">>, _) -> media;
 map_kind_type(<<"INSTITUTION">>, _) -> organization;
-map_kind_type(<<"SET">>, _) -> collection;
 map_kind_type(<<"KEYWORD">>, _) -> keyword;
-map_kind_type(<<"TAG">>, _) -> keyword;
+map_kind_type(<<"LANGUAGE">>, _) -> language;
+map_kind_type(<<"LISTEDIT">>, _) -> 'query';
+map_kind_type(<<"LISTPUBLISH">>, _) -> 'query';
+map_kind_type(<<"LOCATION">>, _) -> location;
+map_kind_type(<<"NOTE">>, _) -> text;
 map_kind_type(<<"PERSON">>, _) -> person;
+map_kind_type(<<"ROLE">>, _) -> predicate;
+map_kind_type(<<"SET">>, _) -> collection;
+map_kind_type(<<"TAG">>, _) -> keyword;
+map_kind_type(<<"THEME">>, _) -> anymeta_theme;
+map_kind_type(<<"TOPIC">>, _) -> anymeta_topic;
+map_kind_type(<<"TYPE">>, _) -> anymeta_type;
 map_kind_type(_, _) -> other.
-
 
 map_predicate(<<"SETMEMBER">>) -> haspart;
 map_predicate(<<"FIGURE">>) -> depiction;
