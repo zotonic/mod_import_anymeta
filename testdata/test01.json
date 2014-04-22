@@ -1,1 +1,152 @@
-{"is_thing":1,"authoritative":"1","resource_uri":"http:\/\/common.test.mediamatic.nl\/id\/353","kind":"ATTACHMENT","type":{"symbolic":[]},"axo":"public","trust":{"edit":{"level":"ME","predicate":null},"link":{"level":"PREDICATE","predicate":"KNOWS_OF"},"react":{"level":"MEMBERS","predicate":null},"view":{"level":"EVERYONE","predicate":null}},"symbolic_name":"2378984.PNG","pubstate":"1","pub_date_start":"1970-01-01 00:00:00","pub_date_end":"9999-01-01 00:00:00","text":{"language":"en","title":"2378984","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]},"uri":"\/353\/en\/2378984","uri_abs":"http:\/\/common.test.mediamatic.nl\/353\/en\/2378984","id":"353","retirement_date":"9999-01-01 00:00:00","create_date":"2014-04-10 14:50:08","modify_date":"2014-04-10 14:50:19","publish_date":"2014-04-10 14:50:19","masked":"0","share":"1","axo_section":"content","rights":"CR","note":"","views":"0","activity":"0","coverage":{"date_start":"2014-04-10 00:00:00","date_start_acc":"d","geometry_acc":"0","geometry_is_computed":"0"},"file":{"original_file":"2378984.png","is_picture":"1","is_media":"1","mime":"image\/png","width":"420","height":"420","orientation":"1","filesize":"4655","imagesize":{"0":420,"1":420,"2":"","3":"width=\"420\" height=\"420\"","mime":"image\/png"},"md5":"2c06133f450184e92cf176d2e3391a1b","file_blob":{"encode":"base64","data":"iVBORw0KGgoAAAANSUhEUgAAAaQAAAGkCAIAAADxLsZiAAAR9klEQVR4Ae3VQa5ltQJD0ZpizYcpMheGABItpHQwqvgQry86\/wiTl21n3x9\/+B8CCCAwQODHwB1dEQEEEPiD7IwAAQQmCJDdRM0uiQACZGcDCCAwQYDsJmp2SQQQIDsbQACBCQJkN1GzSyKAANnZAAIITBAgu4maXRIBBMjOBhBAYIIA2U3U7JIIIEB2NoAAAhMEyG6iZpdEAAGyswEEEJggQHYTNbskAgiQnQ0ggMAEAbKbqNklEUCA7GwAAQQmCJDdRM0uiQACZGcDCCAwQYDsJmp2SQQQIDsbQACBCQJkN1GzSyKAANnZAAIITBAgu4maXRIBBMjOBhBAYIIA2U3U7JIIIEB2NoAAAhMEyG6iZpdEAAGyswEEEJggQHYTNbskAgiQnQ0ggMAEAbKbqNklEUCA7GwAAQQmCJBdXvPvv\/30DwL3CeST3U6SXd7\/\/ZU7EYG\/COST3U6SXd6\/h4dAhUA+2e0k2eX9V4buUATyyW4nyS7v36tDoEIgn+x2kuzy\/itDdygC+WS3k2SX9+\/VIVAhkE92O0l2ef+VoTsUgXyy20myy\/v36hCoEMgnu50ku7z\/ytAdikA+2e0k2eX9e3UIVAjkk91Okl3ef2XoDkUgn+x2kuzy\/r06BCoE8sluJ8ku778ydIcikE92O0l2ef9eHQIVAvlkt5Nkl\/dfGbpDEcgnu50ku7x\/rw6BCoF8sttJssv7rwzdoQjkk91Okl3ev1eHQIVAPtntJNnl\/VeG7lAE8sluJ8ku79+rQ6BCIJ\/sdpLs8v4rQ3coAvlkt5Nkl\/fv1SFQIZBPdjtJdnn\/laE7FIF8sttJssv79+oQqBDIJ7udJLu8\/8rQHYpAPtntJNnl\/Xt1CFQI5JPdTpJd3n9l6A5FIJ\/sdpLs8v69OgQqBPLJbifJLu+\/MnSHIpBPdjtJdnn\/Xh0CFQL5ZLeTZJf3Xxm6QxHIJ7udJLu8f68OgQqBfLLbSbLL+68M3aEI5JPdTpJd3r9Xh0CFQD7Z7STZ5f1Xhu5QBPLJbifJLu\/fq0OgQiCf7HaS7PL+K0N3KAL5ZLeTZJf379UhUCGQT3Y7SXZ5\/5WhOxSBfLLbSbLL+\/fqEKgQyCe7nSS7vP\/K0B2KQD7Z7STZ5f17dQhUCOST3U6SXd5\/ZegORSCf7HaS7PL+vToEKgTyyW4nyS7vvzJ0hyKQT3Y7SXZ5\/14dAhUC+WS3k2SX918ZukMRyCe7nSS7vH+vDoEKgXyy20myy\/uvDN2hCOST3U6SXd6\/V4dAhUA+2e0k2eX9V4buUATyyW4nyS7v36tDoEIgn+x2kuzy\/itDdygC+WS3k2SX9+\/VIVAhkE92O0l2ef+VoTsUgXyy20myy\/v36hCoEMgnu50ku7z\/ytAdikA+2e0k2eX9e3UIVAjkk91Okl3ef2XoDkUgn+x2kuzy\/r06BCoE8sluJ8ku778ydIcikE92O0l2ef9eHQIVAvlkt5Nkl\/dfGbpDEcgnu50ku7x\/rw6BCoF8sttJssv7rwzdoQjkk91Okl3ev1eHQIVAPtntJNnl\/VeG7lAE8sluJ8ku79+rQ6BCIJ\/sdpLs8v4rQ3coAvlkt5P3ZGejCCCAwJHAHQmT3c8jfR8RQOAaAbKjIQQQmCBAdhM1X\/vxdBACnyVAdmSHAAITBMhuoubP\/tj6wxC4RoDsyA4BBCYIkN1Ezdd+PB2EwGcJkB3ZIYDABAGym6j5sz+2\/jAErhEgO7JDAIEJAmQ3UfO1H08HIfBZAmRHdgggMEGA7CZq\/uyPrT8MgWsEyI7sEEBgggDZTdR87cfTQQh8lgDZkR0CCEwQILuJmj\/7Y+sPQ+AaAbIjOwQQmCBAdhM1X\/vxdBACnyVAdmSHAAITBMhuoubP\/tj6wxC4RoDsyA4BBCYIkN1Ezdd+PB2EwGcJkB3ZIYDABAGym6j5sz+2\/jAErhEgO7JDAIEJAmQ3UfO1H08HIfBZAmRHdgggMEGA7CZq\/uyPrT8MgWsEyI7sEEBgggDZTdR87cfTQQh8lgDZkR0CCEwQILuJmj\/7Y+sPQ+AaAbIjOwQQmCBAdhM1X\/vxdBACnyVAdmSHAAITBMhuoubP\/tj6wxC4RoDsyA4BBCYIkN1Ezdd+PB2EwGcJkB3ZIYDABAGym6j5sz+2\/jAErhEgO7JDAIEJAmQ3UfO1H08HIfBZAmRHdgggMEGA7CZq\/uyPrT8MgWsEyI7sEEBgggDZTdR87cfTQQh8lgDZkR0CCEwQILuJmj\/7Y+sPQ+AaAbIjOwQQmCBAdhM1X\/vxdBACnyVAdmSHAAITBMhuoubP\/tj6wxC4RoDsyA4BBCYIkN1Ezdd+PB2EwGcJkB3ZIYDABAGym6j5sz+2\/jAErhEgO7JDAIEJAmQ3UfO1H08HIfBZAmRHdgggMEGA7CZq\/uyPrT8MgWsEyI7sEEBgggDZTdR87cfTQQh8lgDZkR0CCEwQILuJmj\/7Y+sPQ+AaAbIjOwQQmCBAdhM1X\/vxdBACnyVAdmSHAAITBMhuoubP\/tj6wxC4RoDsyA4BBCYIvCa7O\/dxCgIIIHAk8OP41UcEEEDgMQJk91ihroMAAmcCZHfm4isCCDxGgOweK9R1EEDgTIDszlx8RQCBxwiQ3WOFug4CCJwJkN2Zi68IIPAYAbJ7rFDXQQCBMwGyO3PxFQEEHiNAdo8V6joIIHAmQHZnLr4igMBjBMjusUJdBwEEzgTI7szFVwQQeIwA2T1WqOsggMCZANmdufiKAAKPESC7xwp1HQQQOBMguzMXXxFA4DECZPdYoa6DAAJnAmR35uIrAgg8RoDsHivUdRBA4EyA7M5cfEUAgccIkN1jhboOAgicCZDdmYuvCCDwGAGye6xQ10EAgTMBsjtz8RUBBB4jQHaPFeo6CCBwJkB2Zy6+IoDAYwTI7rFCXQcBBM4EyO7MxVcEEHiMANk9VqjrIIDAmQDZnbn4igACjxEgu8cKdR0EEDgTILszF18RQOAxAmT3WKGugwACZwJkd+biKwIIPEaA7B4r1HUQQOBMgOzOXHxFAIHHCJDdY4W6DgIInAmQ3ZmLrwgg8BgBsnusUNdBAIEzAbI7c\/EVAQQeI0B2jxXqOgggcCZAdmcuviKAwGMEyO6xQl0HAQTOBMjuzMVXBBB4jADZPVao6yCAwJkA2Z25+IoAAo8RILvHCnUdBBA4EyC7MxdfEUDgMQJk91ihroMAAmcCZHfm4isCCDxGgOweK9R1EEDgTIDszlx8RQCBxwiQ3WOFug4CCJwJkN2Zi68IIPAYAbJ7rFDXQQCBMwGyO3PxFQEEHiNAdo8V6joIIHAmQHZnLr4igMBjBMjusUJdBwEEzgTI7szFVwQQeIwA2T1WqOsggMCZANmdufiKAAKPESC7xwp1HQQQOBMguzMXXxFA4DECZPdYoa6DAAJnAmR35uIrAgg8RoDsHivUdRBA4Ezgnux+\/+3ne\/+cofqKwC8j8N4j+utGv4zWP\/7DZPefFPwPlv4PAr+eANnFjMmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQyY7s4vEIFgiQXQyd7MguHo9ggQDZxdDJjuzi8QgWCJBdDJ3syC4ej2CBANnF0MmO7OLxCBYIkF0MnezILh6PYIEA2cXQye4\/ye7J5bkUApcJxP76V8F7svtXf9b\/4l++PAjHIfA3gf\/F6\/jgH0l2eSneHgIVAvlkt5Nkl\/dfGbpDEcgnu50ku7x\/rw6BCoF8sttJssv7rwzdoQjkk91Okl3ev1eHQIVAPtntJNnl\/VeG7lAE8sluJ8ku79+rQ6BCIJ\/sdpLs8v4rQ3coAvlkt5Nkl\/fv1SFQIZBPdjtJdnn\/laE7FIF8sttJssv79+oQqBDIJ7udJLu8\/8rQHYpAPtntJNnl\/Xt1CFQI5JPdTpJd3n9l6A5FIJ\/sdpLs8v69OgQqBPLJbifJLu+\/MnSHIpBPdjtJdnn\/Xh0CFQL5ZLeTZJf3Xxm6QxHIJ7udJLu8f68OgQqBfLLbSbLL+68M3aEI5JPdTpJd3r9Xh0CFQD7Z7STZ5f1Xhu5QBPLJbifJLu\/fq0OgQiCf7HaS7PL+K0N3KAL5ZLeTZJf379UhUCGQT3Y7SXZ5\/5WhOxSBfLLbSbLL+\/fqEKgQyCe7nSS7vP\/K0B2KQD7Z7STZ5f17dQhUCOST3U6SXd5\/ZegORSCf7HaS7PL+vToEKgTyyW4nyS7vvzJ0hyKQT3Y7SXZ5\/14dAhUC+WS3k2SX918ZukMRyCe7nSS7vH+vDoEKgXyy20myy\/uvDN2hCOST3U6SXd6\/V4dAhUA+2e0k2eX9V4buUATyyW4nyS7v36tDoEIgn+x2kuzy\/itDdygC+WS3k2SX9+\/VIVAhkE92O0l2ef+VoTsUgXyy20myy\/v36hCoEMgnu50ku7z\/ytAdikA+2e0k2eX9e3UIVAjkk91Okl3ef2XoDkUgn+x2kuzy\/r06BCoE8sluJ8ku778ydIcikE92O0l2ef9eHQIVAvlkt5Nkl\/dfGbpDEcgnu50ku7x\/rw6BCoF8sttJssv7rwzdoQjkk91Okl3ev1eHQIVAPtntJNnl\/VeG7lAE8sluJ8ku79+rQ6BCIJ\/sdpLs8v4rQ3coAvlkt5Nkl\/fv1SFQIZBPdjtJdnn\/laE7FIF8sttJssv79+oQqBDIJ7udJLu8\/8rQHYpAPtntJNnl\/Xt1CFQI5JPdTpJd3n9l6A5FIJ\/sdpLs8v69OgQqBPLJbifJLu+\/MnSHIpBPdjtJdnn\/Xh0CFQL5ZLeTZJf3Xxm6QxHIJ7udJLu8f68OgQqBfLLbSbLL+68M3aEI5JPdTpJd3r9Xh0CFQD7Z7STZbffv9gjMECC7mapdFIFtAmS33b\/bIzBDgOxmqnZRBLYJkN12\/26PwAwBspup2kUR2CZAdtv9uz0CMwTIbqZqF0VgmwDZbffv9gjMECC7mapdFIFtAmS33b\/bIzBDgOxmqnZRBLYJkN12\/26PwAwBspup2kUR2CZAdtv9uz0CMwTIbqZqF0VgmwDZbffv9gjMECC7mapdFIFtAmS33b\/bIzBDgOxmqnZRBLYJkN12\/26PwAwBspup2kUR2CZAdtv9uz0CMwTIbqZqF0VgmwDZbffv9gjMECC7mapdFIFtAmS33b\/bIzBDgOxmqnZRBLYJkN12\/26PwAwBspup2kUR2CZAdtv9uz0CMwTIbqZqF0VgmwDZbffv9gjMECC7mapdFIFtAn8CzAESAX4sBccAAAAASUVORK5CYII="}},"lang":{"en":{"language":"en","title":"2378984","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]}},"alt_uri":"","picture":{"att_id_ref":"353","is_picture":"1","mime":"image\/png","width":"420","height":"420","orientation":"1"},"props":[],"rating":{"0":["0.264686401980198","3"],"3":["0.9900990099009901","0"],"5":["0.333333","0"],"7":["0","0"],"1":[0,0],"2":[0,0],"4":[0,0],"6":[0,0],"activity":"0","views":"0","recent_views":"0"},"pubsub_xmpp_uri":"xmpp:common.test.mediamatic.nl?;node=id\/353","edge":[],"owner_id":"http:\/\/common.test.mediamatic.nl\/id\/352","creator_id":"http:\/\/common.test.mediamatic.nl\/id\/352","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/352","category":[],"img_uri":"http:\/\/common.test.mediamatic.nl\/image\/814\/353-420-420.png"}
+{
+    "activity": "0",
+    "alt_uri": "",
+    "authoritative": "1",
+    "axo": "public",
+    "axo_section": "content",
+    "category": [],
+    "coverage": {
+        "date_start": "2014-04-10 00:00:00",
+        "date_start_acc": "d",
+        "geometry_acc": "0",
+        "geometry_is_computed": "0"
+    },
+    "create_date": "2014-04-10 14:50:08",
+    "creator_id": "http://common.test.mediamatic.nl/id/352",
+    "edge": [],
+    "file": {
+        "file_blob": {
+            "data": "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",
+            "encode": "base64"
+        },
+        "filesize": "4655",
+        "height": "420",
+        "imagesize": {
+            "0": 420,
+            "1": 420,
+            "2": "",
+            "3": "width=\"420\" height=\"420\"",
+            "mime": "image/png"
+        },
+        "is_media": "1",
+        "is_picture": "1",
+        "md5": "2c06133f450184e92cf176d2e3391a1b",
+        "mime": "image/png",
+        "orientation": "1",
+        "original_file": "2378984.png",
+        "width": "420"
+    },
+    "id": "353",
+    "img_uri": "http://common.test.mediamatic.nl/image/814/353-420-420.png",
+    "is_thing": 1,
+    "kind": "ATTACHMENT",
+    "lang": {
+        "en": {
+            "body": "",
+            "chapeau": "",
+            "intro": "",
+            "label": [],
+            "language": "en",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "2378984",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "modifier_id": "http://common.test.mediamatic.nl/id/352",
+    "modify_date": "2014-04-10 14:50:19",
+    "note": "",
+    "owner_id": "http://common.test.mediamatic.nl/id/352",
+    "picture": {
+        "att_id_ref": "353",
+        "height": "420",
+        "is_picture": "1",
+        "mime": "image/png",
+        "orientation": "1",
+        "width": "420"
+    },
+    "props": [],
+    "pub_date_end": "9999-01-01 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2014-04-10 14:50:19",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:common.test.mediamatic.nl?;node=id/353",
+    "rating": {
+        "0": [
+            "0.264686401980198",
+            "3"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0.9900990099009901",
+            "0"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            "0.333333",
+            "0"
+        ],
+        "6": [
+            0,
+            0
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "0",
+        "recent_views": "0",
+        "views": "0"
+    },
+    "resource_uri": "http://common.test.mediamatic.nl/id/353",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "CR",
+    "share": "1",
+    "symbolic_name": "2378984.PNG",
+    "text": {
+        "body": "",
+        "chapeau": "",
+        "intro": "",
+        "label": [],
+        "language": "en",
+        "redirect_uri": "",
+        "subtitle": "",
+        "title": "2378984",
+        "title_short": ""
+    },
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": null
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": null
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": null
+        }
+    },
+    "type": {
+        "symbolic": []
+    },
+    "uri": "/353/en/2378984",
+    "uri_abs": "http://common.test.mediamatic.nl/353/en/2378984",
+    "views": "0"
+}

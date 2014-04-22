@@ -1,1 +1,193 @@
-{"is_thing":1,"authoritative":"1","resource_uri":"http:\/\/common.test.mediamatic.nl\/id\/352","kind":"PERSON","type":{"symbolic":["NOMAIL"]},"axo":"persons","trust":{"view":{"level":"EVERYONE","predicate":"false"},"edit":{"level":"ME","predicate":null},"link":{"level":"PREDICATE","predicate":"KNOWS_OF"},"react":{"level":"MEMBERS","predicate":null}},"symbolic_name":"","pubstate":"1","pub_date_start":"1970-01-01 00:00:00","pub_date_end":"9999-01-01 00:00:00","text":{"language":"en","title":"FredP","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]},"uri":"\/352\/en\/fredp","uri_abs":"http:\/\/common.test.mediamatic.nl\/352\/en\/fredp","id":"352","retirement_date":"9999-01-01 00:00:00","create_date":"2014-04-10 14:37:39","modify_date":"2014-04-10 15:10:13","publish_date":"2014-04-10 14:37:40","masked":"0","share":"1","axo_section":"content","rights":"CR","note":"","views":"0","activity":"0","name":{"full":"FredP","first":"Fred","last":"P"},"lang":{"en":{"language":"en","title":"FredP","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]}},"alt_uri":"","picture":false,"props":[],"rating":{"0":["0.264686401980198","3"],"3":["0.9900990099009901","0"],"5":["0.333333","0"],"7":["0","0"],"1":[0,0],"2":[0,0],"4":[0,0],"6":[0,0],"activity":"0","views":"0","recent_views":"0"},"pubsub_xmpp_uri":"xmpp:common.test.mediamatic.nl?;node=id\/352","edge":[{"kind":"TYPE","symbolic_name":"NOMAIL","edge":{"uuid":"e8672124-c0ac-11e3-87f2-1cc1de046328","predicate_id":"http:\/\/www.w3.org\/2000\/01\/rdf-schema#Class","object_id":"http:\/\/mediamatic.nl\/ns\/anymeta\/2008\/type\/nomail","creator_id":"http:\/\/common.test.mediamatic.nl\/id\/352","owner_id":"http:\/\/common.test.mediamatic.nl\/id\/352","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/352","agent_id":null,"data":null,"order":"9999","authoritative":"1","pending_import":"0","create_date":"2014-04-10 14:37:41","modify_date":"2014-04-10 14:37:41","publish_date":"2014-04-10 15:10:09","predicate":"HAS_TYPE"}},{"kind":"INSTITUTION","symbolic_name":"","edge":{"uuid":"71482a04-c0b1-11e3-87f2-1cc1de046328","predicate_id":"http:\/\/mediamatic.nl\/ns\/anymeta\/2008\/term\/works_for","object_id":"http:\/\/common.test.mediamatic.nl\/id\/361","creator_id":"http:\/\/common.test.mediamatic.nl\/id\/352","owner_id":"http:\/\/common.test.mediamatic.nl\/id\/352","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/352","agent_id":null,"data":null,"order":"9999","authoritative":"1","pending_import":"0","create_date":"2014-04-10 15:10:09","modify_date":"2014-04-10 15:10:09","publish_date":"2014-04-10 15:10:09","predicate":"WORKS_FOR"}},{"kind":"INSTITUTION","symbolic_name":"","edge":{"uuid":"73d99464-c0b1-11e3-87f2-1cc1de046328","predicate_id":"http:\/\/xmlns.com\/foaf\/0.1\/interest","object_id":"http:\/\/common.test.mediamatic.nl\/id\/361","creator_id":"http:\/\/common.test.mediamatic.nl\/id\/352","owner_id":"http:\/\/common.test.mediamatic.nl\/id\/352","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/352","agent_id":null,"data":null,"order":"9999","authoritative":"1","pending_import":"0","create_date":"2014-04-10 15:10:13","modify_date":"2014-04-10 15:10:13","publish_date":"2014-04-10 15:10:13","predicate":"INTEREST"}}],"owner_id":"http:\/\/common.test.mediamatic.nl\/id\/352","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/352","auth":{"email":"fred@driebit.nl","enabled":"1","confirm_logons":"0","confirm":""},"category":[],"img_uri":""}
+{
+    "activity": "0",
+    "alt_uri": "",
+    "auth": {
+        "confirm": "",
+        "confirm_logons": "0",
+        "email": "fred@driebit.nl",
+        "enabled": "1"
+    },
+    "authoritative": "1",
+    "axo": "persons",
+    "axo_section": "content",
+    "category": [],
+    "create_date": "2014-04-10 14:37:39",
+    "edge": [
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:37:41",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:37:41",
+                "object_id": "http://mediamatic.nl/ns/anymeta/2008/type/nomail",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "HAS_TYPE",
+                "predicate_id": "http://www.w3.org/2000/01/rdf-schema#Class",
+                "publish_date": "2014-04-10 15:10:09",
+                "uuid": "e8672124-c0ac-11e3-87f2-1cc1de046328"
+            },
+            "kind": "TYPE",
+            "symbolic_name": "NOMAIL"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:10:09",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 15:10:09",
+                "object_id": "http://common.test.mediamatic.nl/id/361",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "WORKS_FOR",
+                "predicate_id": "http://mediamatic.nl/ns/anymeta/2008/term/works_for",
+                "publish_date": "2014-04-10 15:10:09",
+                "uuid": "71482a04-c0b1-11e3-87f2-1cc1de046328"
+            },
+            "kind": "INSTITUTION",
+            "symbolic_name": ""
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:10:13",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 15:10:13",
+                "object_id": "http://common.test.mediamatic.nl/id/361",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "INTEREST",
+                "predicate_id": "http://xmlns.com/foaf/0.1/interest",
+                "publish_date": "2014-04-10 15:10:13",
+                "uuid": "73d99464-c0b1-11e3-87f2-1cc1de046328"
+            },
+            "kind": "INSTITUTION",
+            "symbolic_name": ""
+        }
+    ],
+    "id": "352",
+    "img_uri": "",
+    "is_thing": 1,
+    "kind": "PERSON",
+    "lang": {
+        "en": {
+            "body": "",
+            "chapeau": "",
+            "intro": "",
+            "label": [],
+            "language": "en",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "FredP",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "modifier_id": "http://common.test.mediamatic.nl/id/352",
+    "modify_date": "2014-04-10 15:10:13",
+    "name": {
+        "first": "Fred",
+        "full": "FredP",
+        "last": "P"
+    },
+    "note": "",
+    "owner_id": "http://common.test.mediamatic.nl/id/352",
+    "picture": false,
+    "props": [],
+    "pub_date_end": "9999-01-01 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2014-04-10 14:37:40",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:common.test.mediamatic.nl?;node=id/352",
+    "rating": {
+        "0": [
+            "0.264686401980198",
+            "3"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0.9900990099009901",
+            "0"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            "0.333333",
+            "0"
+        ],
+        "6": [
+            0,
+            0
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "0",
+        "recent_views": "0",
+        "views": "0"
+    },
+    "resource_uri": "http://common.test.mediamatic.nl/id/352",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "CR",
+    "share": "1",
+    "symbolic_name": "",
+    "text": {
+        "body": "",
+        "chapeau": "",
+        "intro": "",
+        "label": [],
+        "language": "en",
+        "redirect_uri": "",
+        "subtitle": "",
+        "title": "FredP",
+        "title_short": ""
+    },
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": null
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": null
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": "false"
+        }
+    },
+    "type": {
+        "symbolic": [
+            "NOMAIL"
+        ]
+    },
+    "uri": "/352/en/fredp",
+    "uri_abs": "http://common.test.mediamatic.nl/352/en/fredp",
+    "views": "0"
+}
