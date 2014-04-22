@@ -440,8 +440,6 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
             
             case write_rsc(AnymetaId, FieldsFinal, KeepId, Stats, Context) of
                 {ok, RscId, Stats1} ->
-                    import_edge_kind_type(RscId, proplists:get_value(<<"kind">>, Thing), proplists:get_value(<<"type">>, Thing), Context),
-                    
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
@@ -1007,27 +1005,6 @@ write_file(AnymetaId, RscId, Filename, Data, Stats, Context) ->
             #upload{data=Data} -> false;
             _ -> true
         end.
-
-
-import_edge_kind_type(RscId, Kind, {struct, Types}, Context) ->
-    ensure_predicate('subject', Context),
-    ensure_category('anymeta_type', Context),
-    TypesSymbolic = proplists:get_value(<<"symbolic">>, Types),
-    Objects = [ z_convert:to_binary(z_string:to_lower(<<"anytype_", Name/binary>>)) || Name <- [ Kind | TypesSymbolic ] ], 
-    [ import_edge_kind_type_1(RscId, Name, Context) || Name <- lists:usort(Objects) ].
-
-    import_edge_kind_type_1(RscId, Name, Context) ->
-        case m_rsc:rid(Name, Context) of
-            undefined ->
-                {ok, ObjectId} = m_rsc:insert([
-                                            {category, anymeta_type},
-                                            {name, Name},
-                                            {title, <<"Anymeta: ", Name/binary>>}
-                                        ], Context);
-            ObjectId ->
-                ObjectId
-        end,
-        m_edge:insert(RscId, 'subject', ObjectId, [no_touch], Context).
 
 
 import_edges(_Host, _RscId, undefined, Stats, _Context) ->
