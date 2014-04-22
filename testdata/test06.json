@@ -1,1 +1,120 @@
-{"is_thing":1,"authoritative":"1","resource_uri":"http:\/\/common.test.mediamatic.nl\/id\/358","kind":"KEYWORD","type":{"symbolic":[]},"axo":"public","trust":{"edit":{"level":"ME","predicate":""},"link":{"level":"PREDICATE","predicate":"KNOWS_OF"},"react":{"level":"MEMBERS","predicate":""},"view":{"level":"EVERYONE","predicate":""}},"symbolic_name":"","pubstate":"1","pub_date_start":"1970-01-01 00:00:00","pub_date_end":"2037-12-31 00:00:00","text":{"language":"nl","title":"Red","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]},"uri":"\/358\/nl\/red","uri_abs":"http:\/\/common.test.mediamatic.nl\/358\/nl\/red","id":"358","retirement_date":"9999-01-01 00:00:00","create_date":"2014-04-10 14:53:19","modify_date":"2014-04-10 14:53:19","publish_date":"2014-04-10 14:53:19","masked":"0","share":"1","axo_section":"content","rights":"CR","note":"","views":"0","activity":"0","lang":{"nl":{"language":"nl","title":"Red","title_short":"","subtitle":"","chapeau":"","intro":"","body":"","redirect_uri":"","label":[]}},"alt_uri":"","picture":false,"props":{"hide_actions":"0","hide_title":"0"},"rating":{"0":["0.19801980198019803","2"],"3":["0.9900990099009901","0"],"7":["0","0"],"1":[0,0],"2":[0,0],"4":[0,0],"5":[0,0],"6":[0,0],"activity":"0","views":"0","recent_views":"0"},"pubsub_xmpp_uri":"xmpp:common.test.mediamatic.nl?;node=id\/358","edge":[],"owner_id":"http:\/\/common.test.mediamatic.nl\/id\/1","creator_id":"http:\/\/common.test.mediamatic.nl\/id\/1","modifier_id":"http:\/\/common.test.mediamatic.nl\/id\/1","category":[],"img_uri":""}
+{
+    "activity": "0",
+    "alt_uri": "",
+    "authoritative": "1",
+    "axo": "public",
+    "axo_section": "content",
+    "category": [],
+    "create_date": "2014-04-10 14:53:19",
+    "creator_id": "http://common.test.mediamatic.nl/id/1",
+    "edge": [],
+    "id": "358",
+    "img_uri": "",
+    "is_thing": 1,
+    "kind": "KEYWORD",
+    "lang": {
+        "nl": {
+            "body": "",
+            "chapeau": "",
+            "intro": "",
+            "label": [],
+            "language": "nl",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "Red",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "modifier_id": "http://common.test.mediamatic.nl/id/1",
+    "modify_date": "2014-04-10 14:53:19",
+    "note": "",
+    "owner_id": "http://common.test.mediamatic.nl/id/1",
+    "picture": false,
+    "props": {
+        "hide_actions": "0",
+        "hide_title": "0"
+    },
+    "pub_date_end": "2037-12-31 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2014-04-10 14:53:19",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:common.test.mediamatic.nl?;node=id/358",
+    "rating": {
+        "0": [
+            "0.19801980198019803",
+            "2"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0.9900990099009901",
+            "0"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            0,
+            0
+        ],
+        "6": [
+            0,
+            0
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "0",
+        "recent_views": "0",
+        "views": "0"
+    },
+    "resource_uri": "http://common.test.mediamatic.nl/id/358",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "CR",
+    "share": "1",
+    "symbolic_name": "",
+    "text": {
+        "body": "",
+        "chapeau": "",
+        "intro": "",
+        "label": [],
+        "language": "nl",
+        "redirect_uri": "",
+        "subtitle": "",
+        "title": "Red",
+        "title_short": ""
+    },
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": ""
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": ""
+        }
+    },
+    "type": {
+        "symbolic": []
+    },
+    "uri": "/358/nl/red",
+    "uri_abs": "http://common.test.mediamatic.nl/358/nl/red",
+    "views": "0"
+}
