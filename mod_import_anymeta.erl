@@ -39,21 +39,13 @@
     find_any_id/2,
     do_import/7,
     get_thing/5,
-    test_host/5,
-    test/1
+    import_thing/6,
+    test_host/5
 ]).
 
 -include_lib("zotonic.hrl").
 -include_lib("modules/mod_admin/include/admin_menu.hrl").
-
--record(stats, {
-    found = 0,
-    notfound = 0,
-    error = [],
-    consequetive_notfound = 0,
-    start_time = now(),
-    delayed=[]
-}).
+-include_lib("include/mod_import_anymeta.hrl").
 
 init(Context) ->
     ensure_anymeta_type(Context),
@@ -1044,7 +1036,13 @@ import_edge(Host, SubjectId, {struct, Props}, Stats, Context) ->
             ObjectRscUri = proplists:get_value(<<"object_id">>, Edge),
             ObjectId = ensure_rsc_uri(Host, ObjectRscUri, Context),
             progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
-            {ok, _} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
+            {ok, EdgeId} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
+            case proplists:get_value(<<"order">>, Edge) of
+                <<"9999">> ->
+                    nop; %% default
+                OrderBin ->
+                    z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
+            end,
             Stats
     end.
 
@@ -1198,36 +1196,5 @@ ensure_anymeta_type(Context) ->
                               ],
                               Context)
     end.
-    
 
-test(Context0) ->
-    Context = z_acl:sudo(Context0),
-    init(Context),
-    
-    Host = "test.com",
-    %%case catch mochijson2:decode(z_string:sanitize_utf8(Body)) of
 
-    Files = filelib:wildcard(code:lib_dir(zotonic) ++ "/priv/modules/mod_import_anymeta/testdata/*.json"),
-    FilesWithThingId = lists:zip(lists:seq(1000, 1000+length(Files)-1), Files),
-    
-    Stats1 =
-        lists:foldl(
-          fun({ThingId, Filename}, Stats) ->
-                  {ok, Body} = file:read_file(Filename),
-                  {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
-                  Stats1 = import_thing(Host, ThingId, Thing, true, Stats, Context),
-                  Stats1#stats{
-                    found=Stats#stats.found+1, 
-                    consequetive_notfound=0
-                   }
-          end,
-          #stats{},
-          FilesWithThingId
-         ),
-
-    %%Stats = handle_delayed(Stats1#stats.delayed, Host, [], [], true, Stats1#stats{delayed=[]}, Context),
-    Stats = Stats1,
-    io:format("Test stats: ~p~n", [Stats]),
-    ok. 
-
-    
