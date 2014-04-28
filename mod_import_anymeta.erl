@@ -38,6 +38,7 @@
     
     find_any_id/2,
     do_import/6,
+    import_thing/6,
     test_host/4,
     get_thing/4
 ]).
