@@ -262,6 +262,16 @@ do_import(Host, From, To, Secret, KeepId, Context) ->
                         progress(io_lib:format("TEST HOST: FAIL! Not an Anymeta server (~p)", [PoweredBy]), Context),
                         {error, not_anymeta}
                 end;
+            {ok, {{_, 401, _},Hs, _}} -> 
+                progress("TEST HOST: 401 Unauthorized", Context),
+                case z_string:to_lower(proplists:get_value("x-powered-by", Hs, [])) of
+                    "anymeta" ++ _ = PoweredBy->
+                        progress(io_lib:format("TEST HOST: Is Anymeta server (~p)", [PoweredBy]), Context),
+                        {error, unauthorized};
+                    PoweredBy ->
+                        progress(io_lib:format("TEST HOST: FAIL! Not an Anymeta server (~p)", [PoweredBy]), Context),
+                        {error, not_anymeta}
+                end;
             {ok, {{_, 503, _},Hs, _}} -> 
                 progress("TEST HOST: 503 Service Not Available", Context),
                 case z_string:to_lower(proplists:get_value("x-powered-by", Hs, [])) of

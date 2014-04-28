@@ -82,9 +82,10 @@
             </div>
 
             <div class="control-group">
-                <label class="control-label" for="sysadmin-pw">{_ Optional sysadmin password _}</label>
+                <label class="control-label" for="sysadmin-pw">{_ Import secret _}</label>
                 <div class="controls">
                     <input type="text" id="sysadmin-pw" name="sysadmin-pw" value="" class="span2" />
+                    <p class="help-block">{_ Authorization secret for importing non-public things _}</p>
                 </div>
             </div>
 		  
