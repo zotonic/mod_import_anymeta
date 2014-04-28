@@ -4,12 +4,6 @@
 
 -include_lib("../include/mod_import_anymeta.hrl").
 
--define(FRED, "http://common.test.mediamatic.nl/id/352").
--define(IMAGE1, "http://common.test.mediamatic.nl/id/353").
--define(IMAGE2, "http://common.test.mediamatic.nl/id/354").
--define(IMAGE3, "http://common.test.mediamatic.nl/id/355").
--define(IMAGE4, "http://common.test.mediamatic.nl/id/356").
--define(KEYWORD1, "http://common.test.mediamatic.nl/id/357").
 
 test_full(Context0) ->
     Context = z_acl:sudo(Context0),
@@ -40,11 +34,47 @@ test_full(Context0) ->
 test(Context0) ->
     Context = z_acl:sudo(Context0),
     Files = files(),
-    test_import_person_fred(json_file_to_id(lists:nth(1, Files), Context),
-                            json_file_to_id(lists:nth(10, Files), Context),
-                            Context),
 
+    [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId]
+        = lists:map(fun(Seq) -> json_file_to_id(lists:nth(Seq, Files), Context) end, lists:seq(1, length(Files))),
+
+    %% Test artikel
+    {trans, T} = m_rsc:p(ArticleId, title, Context),
+    <<"Article with images">> = proplists:get_value(en, T),
+    <<"Article met plaatjes (nl)">> = proplists:get_value(nl, T),
+    %% 3 types
+    [_,_,_] = m_edge:objects(ArticleId, has_type, Context),
+    %% 3 images
+    [Image1Id, Image2Id, Image3Id] = m_edge:objects(ArticleId, depiction, Context),
+
+    %% 'about'
+    [OrgId] = m_edge:objects(ArticleId, about, Context),
+    
+    
+    {trans, TB} = m_rsc:p(ArticleId, body, Context),
+    <<"<p>Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>">> = proplists:get_value(en, TB),
+    <<"">> = proplists:get_value(nl, TB),
+
+    {trans, TI} = m_rsc:p(ArticleId, summary, Context),
+    <<"Lorem ipsum dolor sit amet, consectetuer adipiscing">> = proplists:get_value(en, TI),
+    <<"Tekst in het nederlands">> = proplists:get_value(nl, TI),
+
+    
+    %% Test persoon
+    <<"FredP">> = z_trans:trans(m_rsc:p(FredId, title, Context), Context),
+    <<"Fred">> = m_rsc:p(FredId, name_first, Context),
+    <<"P">> = m_rsc:p(FredId, name_surname, Context),
+
+    %% fred -> likes -> org
+    [OrgId] = m_edge:objects(FredId, interest, Context),
+    %% fred -> works_for -> org
+    [OrgId] = m_edge:objects(FredId, works_for, Context),
+
+    %% test the org
+    [Image4Id] = m_edge:objects(OrgId, depiction, Context),
+    
     lager:info("All tests ok.").
+
 
 files() ->
     filelib:wildcard(code:lib_dir(zotonic) ++ "/priv/modules/mod_import_anymeta/testdata/*.json").
@@ -58,12 +88,3 @@ json_file_to_id(File, Context) ->
 
 
 
-
-test_import_person_fred(Id, OrgId, Context) ->
-    <<"FredP">> = z_trans:trans(m_rsc:p(Id, title, Context), Context),
-    <<"Fred">> = m_rsc:p(Id, name_first, Context),
-    <<"P">> = m_rsc:p(Id, name_surname, Context),
-
-    [OrgId] = m_edge:objects(Id, interest, Context),
-    [OrgId] = m_edge:objects(Id, works_for, Context),
-    ok.
