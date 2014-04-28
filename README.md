@@ -48,6 +48,18 @@ This module has the following limitations:
  * Menu’s need to be re-done, as the menu structure of Zotonic and anyMeta is totally different.
 
 
+Test cases
+----------
+
+This module comes with a number of test cases. For this purpose, JSON files with Anymeta JSON exports are shipped with this module in the `testdata/` directory. To run the importer on these files and then run the tests from zotonic, assuming your Zotonic site is called `mysite`, do the following:
+
+    import_anymeta_tests:test_full(z_context:new(mysite)).
+
+You'll see some output of the importer scrolling by and a message at the end telling you that all assertions have passed:
+
+    15:13:57.087 [info] All tests ok.
+
+
 Conversion callbacks
 --------------------
 
@@ -165,7 +177,7 @@ This is the conversion used by the Women on Waves web site:
 
 
 
-Example 1: Women on Web
+Example 2: Women on Web
 -----------------------
 
 This is the conversion used by the Women on Web web site:
