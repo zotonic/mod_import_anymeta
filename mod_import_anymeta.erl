@@ -203,7 +203,7 @@ find_any_id(AnyId, Context) when is_list(AnyId) ->
     case z_utils:only_digits(AnyId) of
         true ->
             % anyMeta id
-            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [z_convert:to_integer(AnyId)], Context) of
                 undefined -> undefined;
                 RscId -> {ok, RscId}
             end;
@@ -219,7 +219,7 @@ find_any_id(AnyId, Context) when is_list(AnyId) ->
             end
     end;
 find_any_id(AnyId, Context) when is_integer(AnyId)->
-    case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+    case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [z_convert:to_integer(AnyId)], Context) of
         undefined -> undefined;
         RscId -> {ok, RscId}
     end.
@@ -920,7 +920,7 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
     register_import(true, RscId, AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set anymeta_id = null
                 where rsc_uri <> $2 and anymeta_id = $1",
-               [AnymetaId, RscUri],
+               [z_convert:to_integer(AnymetaId), RscUri],
                Context),
         z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, imported)
                 values ($1, $2, $3, now())",
@@ -936,11 +936,11 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
     register_import_anymeta_id(true, AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set anymeta_id = null
                 where rsc_uri <> $2 and anymeta_id = $1",
-               [AnymetaId, RscUri],
+               [z_convert:to_integer(AnymetaId), RscUri],
                Context),
         z_db:q("update import_anymeta set anymeta_id = $1
                 where rsc_uri = $2",
-               [AnymetaId, RscUri],
+               [z_convert:to_integer(AnymetaId), RscUri],
                Context).
 
     check_existing_rsc(Fields, Context) ->
