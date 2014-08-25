@@ -1,0 +1,189 @@
+{
+    "activity": "0",
+    "address": {
+        "city": "Amsterdam",
+        "country": "nl",
+        "line1": "Lane 1",
+        "phone": "+31201111111",
+        "phone_normalized": "+31201111111",
+        "postcode": "1111 AA",
+        "website": "http://www.tester.nl/",
+        "work": {
+            "email": "",
+            "email_sha1": "",
+            "mobile": "",
+            "mobile_normalized": "",
+            "phone": "",
+            "phone_normalized": ""
+        }
+    },
+    "alt_uri": "",
+    "authoritative": "1",
+    "axo": "public",
+    "axo_section": "content",
+    "category": [
+        "",
+        "",
+        ""
+    ],
+    "coverage": {
+        "geometry_acc": "0",
+        "geometry_is_computed": "0",
+        "geometry_lat": "18.0259201",
+        "geometry_long": "-63.080046700000025"
+    },
+    "create_date": "2014-04-10 15:01:04",
+    "creator_id": "http://common.test.mediamatic.nl/id/352",
+    "edge": [
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:01:04",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "lang": {
+                    "en": {
+                        "intro": "",
+                        "language": "en"
+                    }
+                },
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 15:01:04",
+                "object_id": "http://common.test.mediamatic.nl/id/360",
+                "order": "20",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "FIGURE",
+                "predicate_id": "http://xmlns.com/foaf/0.1/img",
+                "publish_date": "2014-04-10 15:01:04",
+                "uuid": "2c567c49-c0b0-11e3-87f2-1cc1de046328"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": "5309270.PNG"
+        }
+    ],
+    "id": "361",
+    "img_uri": "http://common.test.mediamatic.nl/image/663/360-140-140.png",
+    "interest_count": 1,
+    "is_thing": 1,
+    "keyword": [
+        "357",
+        "358",
+        "359"
+    ],
+    "kind": "INSTITUTION",
+    "lang": {
+        "en": {
+            "body": "",
+            "chapeau": "",
+            "intro": "<p><span style=\"color: red;\">Duis autem</span> vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla <strong>facilisis</strong><br/>\n<div style=\"position: relative;\" class=\"ui_animateFigureCaption\"><a href=\"http://common.test.mediamatic.nl/360/en/5309270\">\n<img src=\"http://common.test.mediamatic.nl/image/663/360-140-140.png\" height=\"140\" width=\"140\" alt=\"5309270\" title=\"5309270\" playable=\"1\"/>\n\n</a><div class=\"caption clearfix\"><div class=\"caption-wrap\"><p class=\"title\"><a title=\"Click to get a larger image - 5309270 - anyMeta web site\" href=\"/360/en/5309270\">5309270</a></p></div></div></div><br/>\nat vero eros et accumsan et iusto odio dignissim qui blandit </p>\n\n\n<ul>\n<li>praesent</li>\n<li>luptatum</li>\n<li>zzril</li>\n</ul>\n\n<p>delenit augue duis dolore te feugait nulla facilisi.</p>",
+            "label": [],
+            "language": "en",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "Organisation with address and inline stuff",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "modifier_id": "http://common.test.mediamatic.nl/id/1",
+    "modify_date": "2014-04-10 15:06:17",
+    "note": "",
+    "owner_id": "http://common.test.mediamatic.nl/id/352",
+    "picture": {
+        "att_id_ref": "360",
+        "edg_id": "243",
+        "height": "140",
+        "is_picture": "1",
+        "mime": "image/png",
+        "orientation": "1",
+        "width": "140"
+    },
+    "props": {
+        "hide_actions": "0",
+        "hide_title": "0"
+    },
+    "pub_date_end": "2037-12-31 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2014-04-10 15:01:04",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:common.test.mediamatic.nl?;node=id/361",
+    "rating": {
+        "0": [
+            "0.389686401980198",
+            "3"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0.9900990099009901",
+            "0"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            "0.958333",
+            "0"
+        ],
+        "6": [
+            0,
+            0
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "0",
+        "recent_views": "0",
+        "views": "0"
+    },
+    "resource_uri": "http://common.test.mediamatic.nl/id/361",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "CR",
+    "share": "1",
+    "symbolic_name": "",
+    "text": {
+        "body": "",
+        "chapeau": "",
+        "intro": "<p><span style=\"color: red;\">Duis autem</span> vel eum iriure dolor in hendrerit in vulputate velit esse molestie consequat, vel illum dolore eu feugiat nulla <strong>facilisis</strong><br/>\n<div style=\"position: relative;\" class=\"ui_animateFigureCaption\"><a href=\"http://common.test.mediamatic.nl/360/en/5309270\">\n<img src=\"http://common.test.mediamatic.nl/image/663/360-140-140.png\" height=\"140\" width=\"140\" alt=\"5309270\" title=\"5309270\" playable=\"1\"/>\n\n</a><div class=\"caption clearfix\"><div class=\"caption-wrap\"><p class=\"title\"><a title=\"Click to get a larger image - 5309270 - anyMeta web site\" href=\"/360/en/5309270\">5309270</a></p></div></div></div><br/>\nat vero eros et accumsan et iusto odio dignissim qui blandit </p>\n\n\n<ul>\n<li>praesent</li>\n<li>luptatum</li>\n<li>zzril</li>\n</ul>\n\n<p>delenit augue duis dolore te feugait nulla facilisi.</p>",
+        "label": [],
+        "language": "en",
+        "redirect_uri": "",
+        "subtitle": "",
+        "title": "Organisation with address and inline stuff",
+        "title_short": ""
+    },
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": ""
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": ""
+        }
+    },
+    "type": {
+        "symbolic": []
+    },
+    "uri": "/361/en/organisation-with-address-and-inline-stuff",
+    "uri_abs": "http://common.test.mediamatic.nl/361/en/organisation-with-address-and-inline-stuff",
+    "views": "0"
+}

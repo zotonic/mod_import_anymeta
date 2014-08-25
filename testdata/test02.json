@@ -1,0 +1,352 @@
+{
+    "activity": "0",
+    "alt_uri": "",
+    "author": [
+        "352"
+    ],
+    "authoritative": "1",
+    "axo": "public",
+    "axo_section": "content",
+    "category": [
+        ""
+    ],
+    "create_date": "2014-04-10 14:50:19",
+    "creator_id": "http://common.test.mediamatic.nl/id/352",
+    "edge": [
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:50:20",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:50:20",
+                "object_id": "http://common.test.mediamatic.nl/id/352",
+                "order": "20",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "AUTHOR",
+                "predicate_id": "http://purl.org/dc/elements/1.1/creator",
+                "publish_date": "2014-04-10 14:50:20",
+                "uuid": "ac771e51-c0ae-11e3-87f2-1cc1de046328"
+            },
+            "kind": "PERSON",
+            "symbolic_name": ""
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:50:20",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "lang": {
+                    "en": {
+                        "intro": "",
+                        "language": "en"
+                    },
+                    "nl": {
+                        "intro": "",
+                        "language": "nl"
+                    }
+                },
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:50:20",
+                "object_id": "http://common.test.mediamatic.nl/id/353",
+                "order": "20",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "FIGURE",
+                "predicate_id": "http://xmlns.com/foaf/0.1/img",
+                "publish_date": "2014-04-10 14:50:20",
+                "uuid": "ac7a4775-c0ae-11e3-87f2-1cc1de046328"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": "2378984.PNG"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:50:20",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:50:20",
+                "object_id": "http://mediamatic.nl/ns/anymeta/2008/type/text",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "HAS_TYPE",
+                "predicate_id": "http://www.w3.org/2000/01/rdf-schema#Class",
+                "publish_date": "2014-04-10 14:50:45",
+                "uuid": "ac890c44-c0ae-11e3-87f2-1cc1de046328"
+            },
+            "kind": "TYPE",
+            "symbolic_name": "TEXT"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:50:45",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "lang": {
+                    "en": {
+                        "intro": "",
+                        "language": "en"
+                    },
+                    "nl": {
+                        "intro": "",
+                        "language": "nl"
+                    }
+                },
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:50:45",
+                "object_id": "http://common.test.mediamatic.nl/id/355",
+                "order": "30",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "FIGURE",
+                "predicate_id": "http://xmlns.com/foaf/0.1/img",
+                "publish_date": "2014-04-10 14:50:45",
+                "uuid": "bbb0fa32-c0ae-11e3-87f2-1cc1de046328"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": "2651508.PNG"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 14:50:59",
+                "creator_id": "http://common.test.mediamatic.nl/id/352",
+                "data": null,
+                "lang": {
+                    "en": {
+                        "intro": "",
+                        "language": "en"
+                    },
+                    "nl": {
+                        "intro": "",
+                        "language": "nl"
+                    }
+                },
+                "modifier_id": "http://common.test.mediamatic.nl/id/352",
+                "modify_date": "2014-04-10 14:50:59",
+                "object_id": "http://common.test.mediamatic.nl/id/356",
+                "order": "31",
+                "owner_id": "http://common.test.mediamatic.nl/id/352",
+                "pending_import": "0",
+                "predicate": "FIGURE",
+                "predicate_id": "http://xmlns.com/foaf/0.1/img",
+                "publish_date": "2014-04-10 14:50:59",
+                "uuid": "c434b391-c0ae-11e3-87f2-1cc1de046328"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": "6477545.PNG"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:08:19",
+                "creator_id": "http://common.test.mediamatic.nl/id/1",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/1",
+                "modify_date": "2014-04-10 15:08:19",
+                "object_id": "http://common.test.mediamatic.nl/id/361",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/1",
+                "pending_import": "0",
+                "predicate": "ABOUT",
+                "predicate_id": "http://purl.org/dc/terms/description",
+                "publish_date": "2014-04-10 15:08:19",
+                "uuid": "2f925aa0-c0b1-11e3-87f2-1cc1de046328"
+            },
+            "kind": "INSTITUTION",
+            "symbolic_name": ""
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:12:30",
+                "creator_id": "http://common.test.mediamatic.nl/id/1",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/1",
+                "modify_date": "2014-04-10 15:12:30",
+                "object_id": "http://mediamatic.nl/ns/anymeta/2008/type/story",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/1",
+                "pending_import": "0",
+                "predicate": "HAS_TYPE",
+                "predicate_id": "http://www.w3.org/2000/01/rdf-schema#Class",
+                "publish_date": "2014-04-10 15:16:43",
+                "uuid": "c59ae0ec-c0b1-11e3-87f2-1cc1de046328"
+            },
+            "kind": "TYPE",
+            "symbolic_name": "STORY"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2014-04-10 15:12:30",
+                "creator_id": "http://common.test.mediamatic.nl/id/1",
+                "data": null,
+                "modifier_id": "http://common.test.mediamatic.nl/id/1",
+                "modify_date": "2014-04-10 15:12:30",
+                "object_id": "http://mediamatic.nl/ns/anymeta/2008/type/news",
+                "order": "9999",
+                "owner_id": "http://common.test.mediamatic.nl/id/1",
+                "pending_import": "0",
+                "predicate": "HAS_TYPE",
+                "predicate_id": "http://www.w3.org/2000/01/rdf-schema#Class",
+                "publish_date": "2014-04-10 15:16:43",
+                "uuid": "c59b521b-c0b1-11e3-87f2-1cc1de046328"
+            },
+            "kind": "TYPE",
+            "symbolic_name": "NEWS"
+        }
+    ],
+    "id": "354",
+    "img_uri": "http://common.test.mediamatic.nl/image/814/353-420-420.png",
+    "is_thing": 1,
+    "iso": "",
+    "keyword": [
+        "359"
+    ],
+    "kind": "ARTICLE",
+    "lang": {
+        "en": {
+            "body": "<p>Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>",
+            "chapeau": "",
+            "intro": "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing</p>",
+            "label": [],
+            "language": "en",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "Article with images",
+            "title_short": ""
+        },
+        "nl": {
+            "body": "",
+            "chapeau": "",
+            "intro": "<p>Tekst in het nederlands</p>",
+            "label": [],
+            "language": "nl",
+            "redirect_uri": "",
+            "subtitle": "",
+            "title": "Article met plaatjes (nl)",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "modifier_id": "http://common.test.mediamatic.nl/id/1",
+    "modify_date": "2014-04-10 15:16:43",
+    "note": "",
+    "org_language": "",
+    "owner_id": "http://common.test.mediamatic.nl/id/352",
+    "picture": {
+        "att_id_ref": "353",
+        "edg_id": "238",
+        "height": "420",
+        "is_picture": "1",
+        "mime": "image/png",
+        "orientation": "1",
+        "width": "420"
+    },
+    "props": {
+        "hide_actions": "0",
+        "hide_title": "0"
+    },
+    "pub_date_end": "2037-12-31 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2014-04-10 14:50:20",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:common.test.mediamatic.nl?;node=id/354",
+    "rating": {
+        "0": [
+            "0.28601980198019805",
+            "3"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0.9900990099009901",
+            "0"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            "0.44",
+            "0"
+        ],
+        "6": [
+            0,
+            0
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "0",
+        "recent_views": "0",
+        "views": "0"
+    },
+    "resource_uri": "http://common.test.mediamatic.nl/id/354",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "CR",
+    "share": "1",
+    "symbolic_name": "",
+    "text": {
+        "body": "<p>Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>",
+        "chapeau": "",
+        "intro": "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing</p>",
+        "label": [],
+        "language": "en",
+        "redirect_uri": "",
+        "subtitle": "",
+        "title": "Article with images",
+        "title_short": ""
+    },
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": ""
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": ""
+        }
+    },
+    "type": {
+        "symbolic": [
+            "STORY",
+            "NEWS",
+            "TEXT"
+        ]
+    },
+    "uri": "/354/en/article-with-images",
+    "uri_abs": "http://common.test.mediamatic.nl/354/en/article-with-images",
+    "views": "0"
+}
