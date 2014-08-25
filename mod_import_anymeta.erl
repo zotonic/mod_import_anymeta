@@ -900,7 +900,8 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
                         {name, z_convert:to_binary(Predicate)},
                         {category, predicate},
                         {title, z_convert:to_binary(Predicate)}
-                    ], Context)
+                    ], Context),
+                z_depcache:flush(Context)
         end.
 
 
