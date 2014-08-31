@@ -4,7 +4,7 @@
 {% block widget_show_minimized %}true{% endblock %}
 
 {% block widget_content %}
-<div class="form-item clearfix">
+<div>
     <label>Anymeta id</label>
     {{ id.anymeta_id }}
     <a href="http://{{ id.anymeta_host }}/id/{{ id.anymeta_uuid }}" target="_new">{_ view in new window _}</a>
