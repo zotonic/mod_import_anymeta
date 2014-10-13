@@ -651,25 +651,25 @@ group_by_lang([{Iso,Texts}|Ts], D) ->
 
 
 map_fields(Thing) ->
-    map_fields(Thing, []).
+    map_fields(Thing, Thing, []).
 
-map_fields([], Acc) ->
+map_fields([], _Orig, Acc) ->
     Acc;
-map_fields([{<<"pubstate">>, <<"1">>}|T], Acc) ->
-    map_fields(T, [{is_published, true}|Acc]);
-map_fields([{<<"pubstate">>, _}|T], Acc) ->
-    map_fields(T, [{is_published, false}|Acc]);
-map_fields([{<<"pub_date_start">>, Date}|T], Acc) ->
-    map_fields(T, [{publication_start, convert_datetime(Date)}|Acc]);
-map_fields([{<<"pub_date_end">>, Date}|T], Acc) ->
-    map_fields(T, [{publication_end, convert_datetime(Date)}|Acc]);
-map_fields([{<<"org_pubdate">>, Date}|T], Acc) ->
-    map_fields(T, [{org_pubdate, convert_datetime(Date)}|Acc]);
-map_fields([{<<"create_date">>, Date}|T], Acc) ->
-    map_fields(T, [{created, convert_datetime(Date)}|Acc]);
-map_fields([{<<"modify_date">>, Date}|T], Acc) ->
-    map_fields(T, [{modified, convert_datetime(Date)}|Acc]);
-map_fields([{<<"coverage">>, {struct, Cs}}|T], Acc) ->
+map_fields([{<<"pubstate">>, <<"1">>}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{is_published, true}|Acc]);
+map_fields([{<<"pubstate">>, _}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{is_published, false}|Acc]);
+map_fields([{<<"pub_date_start">>, Date}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{publication_start, convert_datetime(Date)}|Acc]);
+map_fields([{<<"pub_date_end">>, Date}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{publication_end, convert_datetime(Date)}|Acc]);
+map_fields([{<<"org_pubdate">>, Date}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{org_pubdate, convert_datetime(Date)}|Acc]);
+map_fields([{<<"create_date">>, Date}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{created, convert_datetime(Date)}|Acc]);
+map_fields([{<<"modify_date">>, Date}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{modified, convert_datetime(Date)}|Acc]);
+map_fields([{<<"coverage">>, {struct, Cs}}|T], _Orig, Acc) ->
     % Time & location
     Acc1 = lists:foldl(
         fun({<<"date_start">>, D}, A) -> [ {date_start, convert_datetime(D)} | A ];
@@ -681,28 +681,34 @@ map_fields([{<<"coverage">>, {struct, Cs}}|T], Acc) ->
         end,
         Acc,
         Cs),
-    map_fields(T, Acc1);
-map_fields([{<<"symbolic_name">>, <<"">>}|T], Acc) ->
-    map_fields(T, [{name, undefined}|Acc]);
-map_fields([{<<"symbolic_name">>, <<"NULL">>}|T], Acc) ->
-    map_fields(T, [{name, undefined}|Acc]);
-map_fields([{<<"symbolic_name">>, Name}|T], Acc) ->
-    map_fields(T, [{name, z_string:to_lower(Name)}|Acc]);
-map_fields([{<<"axo">>, Axo}|T], Acc) ->
-    case z_convert:to_list(z_string:to_lower(Axo)) of
-        "public" -> map_fields(T, [{visible_for, 0}|Acc]);
-        "system" -> map_fields(T, [{visible_for, 0}|Acc]);
-        "metadata" -> map_fields(T, [{visible_for, 0}|Acc]);
-        _ -> map_fields(T, [{visible_for, 1}|Acc])
+    map_fields(T, _Orig, Acc1);
+map_fields([{<<"symbolic_name">>, <<"">>}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{name, undefined}|Acc]);
+map_fields([{<<"symbolic_name">>, <<"NULL">>}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{name, undefined}|Acc]);
+map_fields([{<<"symbolic_name">>, Name}|T], Orig, Acc) ->
+    %% skip symbolic names of attachment
+    case proplists:get_value(<<"kind">>, Orig) of
+        <<"ATTACHMENT">> ->
+            map_fields(T, Orig, Acc);
+        _ ->
+            map_fields(T, Orig, [{name, z_string:to_lower(Name)}|Acc])
     end;
-map_fields([{<<"rights">>, <<"">>}|T], Acc) ->
-    map_fields(T, Acc);
-map_fields([{<<"rights">>, <<"CR">>}|T], Acc) ->
-    map_fields(T, Acc);
-map_fields([{<<"rights">>, Rights}|T], Acc) ->
-    map_fields(T, [{cc_rights, Rights}|Acc]);
-map_fields([_|T], Acc) ->
-    map_fields(T, Acc).
+map_fields([{<<"axo">>, Axo}|T], _Orig, Acc) ->
+    case z_convert:to_list(z_string:to_lower(Axo)) of
+        "public" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
+        "system" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
+        "metadata" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
+        _ -> map_fields(T, _Orig, [{visible_for, 1}|Acc])
+    end;
+map_fields([{<<"rights">>, <<"">>}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, Acc);
+map_fields([{<<"rights">>, <<"CR">>}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, Acc);
+map_fields([{<<"rights">>, Rights}|T], _Orig, Acc) ->
+    map_fields(T, _Orig, [{cc_rights, Rights}|Acc]);
+map_fields([_|T], _Orig, Acc) ->
+    map_fields(T, _Orig, Acc).
 
 
 convert_datetime(DateTime) ->
@@ -1156,7 +1162,8 @@ convert_query(Fields, Thing, Context) ->
         TsOneOf = [ string:tokens(z_string:trim(A), ":") || A <- string:tokens(OneOf, ",") ],
         TsAll = [ string:tokens(z_string:trim(A), ":") || A <- string:tokens(All, ",") ],
         [
-            case Rel of
+         case Rel of
+                [] -> [];
                 [A] -> A;
                 [A,Pred] -> [$[, A, $,, z_convert:to_list(map_predicate(Pred)), $]]
             end
