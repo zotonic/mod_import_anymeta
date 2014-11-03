@@ -1165,8 +1165,8 @@ convert_query(Fields, Thing, Context) ->
         [
          case Rel of
                 [] -> [];
-                [A] -> A;
-                [A,Pred] -> [$[, A, $,, z_convert:to_list(map_predicate(Pred)), $]]
+                [A] -> z_string:to_lower(A);
+                [A,Pred] -> [$[, z_string:to_lower(A), $,, z_convert:to_list(map_predicate(Pred)), $]]
             end
             || Rel <- TsOneOf ++ TsAll
         ];
