@@ -699,6 +699,7 @@ map_fields([{<<"axo">>, Axo}|T], _Orig, Acc) ->
         "public" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
         "system" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
         "metadata" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
+        "persons" -> map_fields(T, _Orig, [{visible_for, 0}|Acc]);
         _ -> map_fields(T, _Orig, [{visible_for, 1}|Acc])
     end;
 map_fields([{<<"rights">>, <<"">>}|T], _Orig, Acc) ->
