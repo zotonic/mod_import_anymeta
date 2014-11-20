@@ -69,7 +69,7 @@ init(Context) ->
                     rsc_uri character varying(255) not null,
                     anymeta_id int,
                     rsc_id int not null,
-                    imported timestamp not null,
+                    imported timestamp with time zone not null,
                     
                     constraint import_anymeta_pkey primary key (rsc_uri),
                     constraint fk_import_anymeta_rsc_id foreign key (rsc_id)
