@@ -1,6 +1,8 @@
 Zotonic - Import data from an anyMeta site
 ==========================================
 
+This is an older branch for release-0.11.x Zotonic sites.
+
 [Zotonic](http://zotonic.com/) is a CMS.
 It is written in Erlang.
 It is extensible with modules.
