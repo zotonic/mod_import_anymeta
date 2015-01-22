@@ -890,7 +890,7 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
             {ok, _Id} ->
                 ok;
             {error, _} ->
-                progress(io_lib:format("Insert category ~w", [category]), Context),
+                progress(io_lib:format("Insert category ~w", [Category]), Context),
                 m_rsc:insert([
                         {name, z_convert:to_binary(Category)},
                         {category, category},
@@ -1164,9 +1164,9 @@ convert_query(Fields, Thing, Context) ->
         TsAll = [ string:tokens(z_string:trim(A), ":") || A <- string:tokens(All, ",") ],
         [
          case Rel of
-                [] -> [];
                 [A] -> z_string:to_lower(A);
-                [A,Pred] -> [$[, z_string:to_lower(A), $,, z_convert:to_list(map_predicate(Pred)), $]]
+                [A,Pred] -> [$[, z_string:to_lower(A), $,, z_convert:to_list(map_predicate(Pred)), $]];
+                _ -> []
             end
             || Rel <- TsOneOf ++ TsAll
         ];
