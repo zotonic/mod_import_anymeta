@@ -414,6 +414,7 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             RscUri = proplists:get_value(<<"resource_uri">>, Thing),
+            Authoritative = proplists:get_value(<<"authoritative">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
             Texts2 = group_by_lang(Texts1),
             Websites = proplists:get_value(website, Texts2),
@@ -426,7 +427,8 @@ import_thing(Host, AnymetaId, Thing, KeepId, Stats, Context) ->
                         {anymeta_id, AnymetaId},
                         {anymeta_rsc_uri, RscUri},
                         {anymeta_host, Host},
-                        {language, Langs}
+                        {language, Langs},
+                        {is_authoritative, Authoritative}
                         |OtherFields
                      ]
                      ++ fetch_address(Thing)
