@@ -905,12 +905,6 @@ write_rsc(AnymetaId, Fields, KeepId, Stats, Context) ->
             {ok, _Id} ->
                 ok;
             {error, _} ->
-                case m_rsc:name_to_id(Predicate, Context) of
-                    {ok, Id} ->
-                        m_rsc_update:update(Id, [{name, undefined}], Context);
-                    {error, _} ->
-                        none
-                end,
                 m_rsc:insert([
                         {name, z_convert:to_binary(Predicate)},
                         {category, predicate},
