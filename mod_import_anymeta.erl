@@ -211,7 +211,7 @@ find_any_id(AnyId, Context) when is_list(AnyId) ->
     case z_utils:only_digits(AnyId) of
         true ->
             % anyMeta id
-            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [AnyId], Context) of
+            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [z_convert:to_integer(AnyId)], Context) of
                 undefined -> undefined;
                 RscId -> {ok, RscId}
             end;
