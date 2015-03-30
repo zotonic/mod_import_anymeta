@@ -48,10 +48,22 @@
 -include_lib("include/mod_import_anymeta.hrl").
 
 init(Context) ->
+    ?DEBUG("init"),
     ensure_anymeta_type(Context),
     case z_db:table_exists(import_anymeta, Context) of
         true ->
-            ok;
+            % Conversion: Add host and stub
+            Cols = z_db:columns(import_anymeta, Context),
+            HasHost = lists:keyfind(host, #column_def.name, Cols),
+            case HasHost of
+                false ->
+                    lager:info("Updating table import_anymeta."),
+                    [] = z_db:q("alter table import_anymeta ADD COLUMN host character varying(255) not null, ADD COLUMN stub boolean", Context),
+                    z_db:flush(Context),
+                    ok;
+                _ ->
+                    ok
+            end;
         false ->
             [] = z_db:q("
                 create table import_anymeta (
@@ -176,9 +188,8 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             From     = z_convert:to_integer(z_context:get_q_validated("start-id", Context)),
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
-            KeepId   = z_convert:to_bool(z_context:get_q("keep-id", Context)),
 
-            lager:info("Anymeta import started (keep anymeta ids: ~p)", [KeepId]),
+            lager:info("Anymeta import started."),
 
             z_context:set_session(anymeta_host, Host, Context),
             
@@ -851,7 +862,7 @@ map_language(Code) -> Code.
 write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
     RscUri = proplists:get_value(anymeta_rsc_uri, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
-    case check_previous_import(RscUri, Context) of
+    case check_previous_import(Host, RscUri, Context) of
         {ok, RscId} ->
             Fields1 = proplists:delete(name, Fields),
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
@@ -910,8 +921,8 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
         end.
 
 
-    check_previous_import(RscUri, Context) ->
-        case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [RscUri], Context) of
+    check_previous_import(Host, RscUri, Context) ->
+        case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1 and host = $2", [RscUri, Host], Context) of
             undefined ->
                 none;
             RscId -> 
@@ -934,7 +945,7 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
                Context).
                
     register_import_update(Host, _RscId, _AnymetaId, RscUri, Context) ->
-        z_db:q("update import_anymeta set stub = true
+        z_db:q("update import_anymeta set stub = false
                 where host = $1 and rsc_uri = $2",
                [Host, RscUri],
                Context).
@@ -963,7 +974,7 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
         end.
 
     ensure_rsc_uri(Host, RscUri, Context) ->
-        case check_previous_import(RscUri, Context) of
+        case check_previous_import(Host, RscUri, Context) of
             {ok, RscId} ->
                 RscId;
             none ->
