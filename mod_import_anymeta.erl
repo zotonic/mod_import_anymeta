@@ -48,7 +48,6 @@
 -include_lib("include/mod_import_anymeta.hrl").
 
 init(Context) ->
-    ?DEBUG("init"),
     ensure_anymeta_type(Context),
     case z_db:table_exists(import_anymeta, Context) of
         true ->
@@ -58,7 +57,7 @@ init(Context) ->
             case HasHost of
                 false ->
                     lager:info("Updating table import_anymeta."),
-                    [] = z_db:q("alter table import_anymeta ADD COLUMN host character varying(255) not null, ADD COLUMN stub boolean", Context),
+                    [] = z_db:q("alter table import_anymeta ADD COLUMN host character varying(255), ADD COLUMN stub boolean", Context),
                     z_db:flush(Context),
                     ok;
                 _ ->
@@ -70,7 +69,7 @@ init(Context) ->
                     rsc_id int not null,
                     rsc_uri character varying(255) not null,
                     anymeta_id int,
-                    host character varying(255) not null,
+                    host character varying(255),
                     stub boolean,
                     imported timestamp with time zone not null,
                     
