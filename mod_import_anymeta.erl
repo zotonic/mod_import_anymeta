@@ -596,8 +596,9 @@ map_texts(Lang, Ts) ->
             ];
 
     % TODO: map the wiki refs to Zotonic html
-    map_text_field(<<"body">>, T) ->
+    map_text_field(<<"body_wikified">>, T) ->
         {body, T};
+
     map_text_field(<<"redirect_uri">>, T) ->
         {website, T};
 
@@ -943,10 +944,10 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
                [RscUri, RscId, AnymetaId, Host],
                Context).
                
-    register_import_update(Host, _RscId, _AnymetaId, RscUri, Context) ->
-        z_db:q("update import_anymeta set stub = false
-                where host = $1 and rsc_uri = $2",
-               [Host, RscUri],
+    register_import_update(Host, _RscId, AnymetaId, RscUri, Context) ->
+        z_db:q("update import_anymeta set stub = false, anymeta_id = $1
+                where host = $2 and rsc_uri = $3",
+               [AnymetaId, Host, RscUri],
                Context).
 
     check_existing_rsc(Fields, Context) ->
