@@ -24,19 +24,22 @@
                         <input type="text" id="imported_id" name="imported_id" value="" class="form-control" />
                         {% validate id="imported_id" type={presence} type={numericality minimum=1} %}
                     </div>
+                </div>
+                <div class="form-group row">
+                    <label class="control-label col-md-3" for="imported_host">{_ Hostname of Anymeta site (without “http://”) _}</label>
+                    <div class="col-md-3">
+                        <input type="text" id="imported_uri" name="imported_host" value="" class="form-control" />
+                    </div>
                     <div class="col-md-6">
                         <button class="btn btn-primary" type="submit">{_ Find _}</button>
                     </div>
                 </div>
 
                 <div class="form-group row">
-
                     <div class="col-md-12">
     		            <div style="display:none" class="alert alert-danger" id="find-error">
     		                {_ This id has not been imported. _}
     		            </div>
-
-                        <p class="help-block">{_ You can only find Anymeta IDs that were migrated. Use the UUID or the normal search to find other imports. _}</p>
                     </div>
                 </div>
 
@@ -76,19 +79,6 @@
                         <input type="text" id="end-id" name="end-id" value="" class="col-lg-2 col-md-2 form-control" />
                     </div>
                     {% validate id="end-id" type={numericality minimum=1} %}
-                </div>
-
-                <div class="form-group row">
-                    <label class="control-label col-md-3" for="keep-id">{_ Content migration _}</label>
-                    <div class="col-md-9">
-                    <div class="checkbox">
-                        <label>
-                            <input type="checkbox" id="keep-id" name="keep-id" value="1" />
-                            {_ Remember Anymeta ID for supporting old URLs and lookup by Anymeta ID. _}
-                        </label>
-                        <p class="help-block">{_ Check this <strong>only for the main site</strong> you are migrating from, otherwise you overwrite other imported ids. _}</p>
-                    </div>
-                </div>
                 </div>
 
                 <div class="form-group row">
