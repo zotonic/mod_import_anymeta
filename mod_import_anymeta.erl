@@ -437,10 +437,11 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                         {is_authoritative, Authoritative}
                         |OtherFields
                      ]
+                     ++ fetch_media(Thing)
                      ++ fetch_address(Thing)
                      ++ fetch_name(Thing) 
                      ++ Texts3,
-            
+
             Fields = case fetch_website(Websites) of
                         undefined -> Fields0;
                         <<>> -> Fields0;
@@ -474,9 +475,14 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                                         undefined ->
                                             Stats3;
                                         _ ->
-                                            Url = proplists:get_value(<<"uri">>, File),
-                                            m_media:replace_url(Url, RscId, [], Context),
-                                            Stats3
+                                            case proplists:get_value(<<"mime">>, File) of
+                                                <<"application/x-youtube">> ->
+                                                    Stats3;
+                                                _ ->
+                                                    Url = proplists:get_value(<<"uri">>, File),
+                                                    m_media:replace_url(Url, RscId, [], Context),
+                                                    Stats3
+                                            end
                                     end;
                                 {struct, Fileblob} -> 
                                     {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
@@ -530,6 +536,19 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             [Url|_] -> Url
         end.
 
+    fetch_media(Thing) ->
+        case proplists:get_value(<<"file">>, Thing) of
+            {struct, File} ->
+                case proplists:get_value(<<"mime">>, File) of
+                    <<"application/x-youtube">> ->
+                        [{oembed_url, proplists:get_value(<<"uri">>, File)}];
+                    _ ->
+                        []
+                end;
+            _ ->
+                []
+        end.
+
     fetch_address(Thing) ->
         case proplists:get_value(<<"address">>, Thing) of
             {struct, As} when is_list(As) ->
@@ -538,7 +557,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             _ ->
                 []
         end.
-        
+
         adr_part({<<"email">>, V}, Acc) -> [{email, V}|Acc];
         adr_part({<<"phone">>, V}, Acc) -> [{phone, V}|Acc];
         adr_part({<<"mobile">>, V}, Acc) -> [{phone_alt, V}|Acc];
@@ -745,7 +764,13 @@ fix_media_category({category, media} = C, Thing) ->
         {struct, File} -> 
             case proplists:get_value(<<"is_picture">>, File) of
                 <<"1">> -> {category, image};
-                _ -> {category, document}
+                _ ->
+                    case proplists:get_value(<<"mime">>, File) of
+                        <<"application/x-youtube">> ->
+                            {category, video};
+                        _ ->
+                            {category, document}
+                    end
             end
     end;
 fix_media_category(Cat, _Thing) ->
