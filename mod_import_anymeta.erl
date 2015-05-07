@@ -560,7 +560,6 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                 % find the content group or create one
                 case find_any_id(AnyId, Host, Context) of
                     {ok, ZotonicId} ->
-                        ?DEBUG(ZotonicId),
                         [{content_group_id, ZotonicId}];
                     undefined ->
                         RscUri = binary_to_list(iolist_to_binary(Host ++ "/id/" ++ AnyId)),
