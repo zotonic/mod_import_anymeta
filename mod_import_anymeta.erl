@@ -464,25 +464,26 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(Host, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
+                    Stats4 = import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context),
 
                     case proplists:get_value(<<"file">>, Thing) of
                         undefined ->
-                            Stats3;
+                            Stats4;
                         {struct, File} -> 
                             Filename = proplists:get_value(<<"original_file">>, File),
                             case proplists:get_value(<<"file_blob">>, File) of
                                 undefined ->
                                     case proplists:get_value(<<"uri">>, File) of
                                         undefined ->
-                                            Stats3;
+                                            Stats4;
                                         _ ->
                                             case proplists:get_value(<<"mime">>, File) of
                                                 <<"application/x-youtube">> ->
-                                                    Stats3;
+                                                    Stats4;
                                                 _ ->
                                                     Url = proplists:get_value(<<"uri">>, File),
                                                     m_media:replace_url(Url, RscId, [], Context),
-                                                    Stats3
+                                                    Stats4
                                             end
                                     end;
                                 {struct, Fileblob} -> 
@@ -490,9 +491,9 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                                     case proplists:get_value(<<"encode">>, Fileblob) of
                                         <<"base64">> ->
                                             Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
-                                            write_file(AnymetaId, RscId, Filename, Data, Stats3, Context);
+                                            write_file(AnymetaId, RscId, Filename, Data, Stats4, Context);
                                         Encoding ->
-                                        Stats3#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats3#stats.error]}
+                                        Stats4#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats4#stats.error]}
                                     end
                             end
                     end;
