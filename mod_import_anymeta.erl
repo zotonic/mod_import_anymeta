@@ -437,6 +437,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                         {is_authoritative, Authoritative}
                         |OtherFields
                      ]
+                     ++ fetch_content_group(Thing, Host, Context)
                      ++ fetch_media(Thing)
                      ++ fetch_address(Thing)
                      ++ fetch_name(Thing) 
@@ -548,6 +549,33 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                 end;
             _ ->
                 []
+        end.
+
+    fetch_content_group(Thing, Host, Context) ->
+        case proplists:get_value(<<"theme">>, Thing) of
+            undefined ->
+                [];
+            ThemeIds ->
+                AnyId = lists:nth(1, ThemeIds),
+                % find the content group or create one
+                case find_any_id(AnyId, Host, Context) of
+                    {ok, ZotonicId} ->
+                        [{content_group_id, ZotonicId}];
+                    undefined ->
+                        RscUri = binary_to_list(iolist_to_binary(Host ++ "/id/" ++ AnyId)),
+                        Ps = [
+                            {category, content_group},
+                            {is_published, false},
+                            {visible_for, 1},
+                            {title, iolist_to_binary(["Content group stub: ",AnyId])},
+                            {anymeta_id, AnyId},
+                            {anymeta_host, Host}
+                        ],
+                        {ok, RscId} = m_rsc:insert(Ps, Context),
+                        register_import_content_group(Host, RscId, z_convert:to_integer(AnyId), RscUri, Context),
+                        progress(io_lib:format("    Content group stub for ~p (zotonic id ~w)", [AnyId, RscId]), Context),
+                        [{content_group_id, RscId}]
+                end
         end.
 
     fetch_address(Thing) ->
@@ -970,6 +998,12 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
                [RscUri, RscId, AnymetaId, Host],
                Context).
                
+    register_import_content_group(Host, RscId, AnymetaId, RscUri, Context) ->
+        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
+                values ($1, $2, $3, $4, true, now())",
+               [RscUri, RscId, AnymetaId, Host],
+               Context).
+
     register_import_update(Host, _RscId, AnymetaId, RscUri, Context) ->
         z_db:q("update import_anymeta set stub = false, anymeta_id = $1
                 where host = $2 and rsc_uri = $3",
