@@ -222,7 +222,7 @@
     "kind": "ARTICLE",
     "lang": {
         "en": {
-            "body": "<p>Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>",
+            "body_wikified": "<p>Claritas est etiam processus dynamicus, qui sequitur mutationem consuetudium lectorum. Mirum est notare quam littera gothica, quam nunc putamus parum claram, anteposuerit litterarum formas humanitatis per seacula quarta decima et quinta decima. Eodem modo typi, qui nunc nobis videntur parum clari, fiant sollemnes in futurum.</p>",
             "chapeau": "",
             "intro": "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing</p>",
             "label": [],
@@ -233,7 +233,7 @@
             "title_short": ""
         },
         "nl": {
-            "body": "",
+            "body_wikified": "",
             "chapeau": "",
             "intro": "<p>Tekst in het nederlands</p>",
             "label": [],
