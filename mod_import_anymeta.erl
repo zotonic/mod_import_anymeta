@@ -918,8 +918,14 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
     ensure_category(proplists:get_value(category, Fields), Context),
     case check_previous_import(Host, RscUri, Context) of
         {ok, RscId} ->
+            case m_rsc:get(proplists:get_value(name, Fields), Context) of
+              undefined ->
+                Fields1 = Fields;
+              _FoundRsc ->
+                Fields1 = proplists:delete(name, Fields)
+            end,
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
-            {ok, RscId} = m_rsc_update:update(RscId, Fields, [{escape_texts, false}, is_import], Context),
+            {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
             register_import_update(Host, RscId, AnymetaId, RscUri, Context),
             {ok, RscId, Stats};
         none -> 
