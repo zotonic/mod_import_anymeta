@@ -11,14 +11,14 @@ test_full(Context0) ->
 
     Host = "test.com",
 
-    Files = files(),
+    Files = files(Context),
     FilesWithThingId = lists:zip(lists:seq(1000, 1000+length(Files)-1), Files),
 
     lists:foldl(
       fun({ThingId, Filename}, Stats) ->
               {ok, Body} = file:read_file(Filename),
               {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
-              Stats1 = mod_import_anymeta:import_thing(Host, ThingId, Thing, true, Stats, Context),
+              Stats1 = mod_import_anymeta:import_thing(Host, ThingId, Thing, Stats, Context),
               Stats1#stats{
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
@@ -33,7 +33,7 @@ test_full(Context0) ->
 
 test(Context0) ->
     Context = z_acl:sudo(Context0),
-    Files = files(),
+    Files = files(Context),
 
     [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId]
         = lists:map(fun(Seq) -> json_file_to_id(lists:nth(Seq, Files), Context) end, lists:seq(1, length(Files))),
@@ -76,15 +76,12 @@ test(Context0) ->
     lager:info("All tests ok.").
 
 
-files() ->
-    filelib:wildcard(code:lib_dir(zotonic) ++ "/priv/modules/mod_import_anymeta/testdata/*.json").
+files(Context) ->
+    filelib:wildcard(z_path:module_dir(mod_import_anymeta, Context) ++ "/testdata/*.json").
 
 json_file_to_id(File, Context) ->
     {ok, Body} = file:read_file(File),
     {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    {ok, Id} = mod_import_anymeta:find_any_id(RscUri, Context),
+    {ok, Id} = mod_import_anymeta:find_any_id(RscUri, "test.com", Context),
     Id.
-
-
-
