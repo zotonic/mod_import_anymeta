@@ -1,0 +1,240 @@
+{
+    "activity": "2",
+    "address": {
+        "work": {
+            "email": "",
+            "email_sha1": "",
+            "mobile": "",
+            "mobile_normalized": "",
+            "phone": "",
+            "phone_normalized": ""
+        }
+    },
+    "alt_uri": "",
+    "authoritative": "1",
+    "axo": "public",
+    "axo_section": "content",
+    "category": [
+        "THEME_OPENBOOK_2",
+        "THEME_OPENBOOK"
+    ],
+    "citation": {
+        "date": "0000-00-00 00:00:00",
+        "date_accessed": "0000-00-00 00:00:00",
+        "id_ref": "2226"
+    },
+    "create_date": "2012-02-19 14:24:07",
+    "creator_id": "http://www.thebeach.nu/id/63",
+    "edge": [
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2012-07-24 14:11:41",
+                "creator_id": "http://www.thebeach.nu/id/1289",
+                "data": null,
+                "modifier_id": "http://www.thebeach.nu/id/1289",
+                "modify_date": "2012-07-24 14:11:41",
+                "object_id": "http://www.thebeach.nu/id/2369",
+                "order": "9999",
+                "owner_id": "http://www.thebeach.nu/id/1289",
+                "pending_import": "0",
+                "predicate": "RELATED",
+                "predicate_id": "http://mediamatic.nl/ns/anymeta/2008/term/related",
+                "publish_date": "2012-07-24 14:11:45",
+                "uuid": "ba587590-d588-11e1-97c3-1cc1dee63420"
+            },
+            "kind": "THEME",
+            "symbolic_name": "THEME_OPENBOOK_2"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2012-07-24 14:11:45",
+                "creator_id": "http://www.thebeach.nu/id/1289",
+                "data": null,
+                "modifier_id": "http://www.thebeach.nu/id/1289",
+                "modify_date": "2012-07-24 14:11:45",
+                "object_id": "http://www.thebeach.nu/id/2219",
+                "order": "9999",
+                "owner_id": "http://www.thebeach.nu/id/1289",
+                "pending_import": "0",
+                "predicate": "RELATED",
+                "predicate_id": "http://mediamatic.nl/ns/anymeta/2008/term/related",
+                "publish_date": "2012-07-24 14:11:49",
+                "uuid": "bc65388c-d588-11e1-97c3-1cc1dee63420"
+            },
+            "kind": "THEME",
+            "symbolic_name": "THEME_OPENBOOK"
+        },
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": "2013-05-21 11:50:43",
+                "creator_id": "http://www.thebeach.nu/id/1289",
+                "data": null,
+                "lang": {
+                    "nl": {
+                        "intro": "",
+                        "language": "nl"
+                    }
+                },
+                "modifier_id": "http://www.thebeach.nu/id/1289",
+                "modify_date": "2013-05-21 11:50:57",
+                "object_id": "http://www.thebeach.nu/id/2336",
+                "order": "0",
+                "owner_id": "http://www.thebeach.nu/id/1289",
+                "pending_import": "0",
+                "predicate": "FIGURE",
+                "predicate_id": "http://xmlns.com/foaf/0.1/img",
+                "publish_date": "2013-05-21 11:50:43",
+                "uuid": "e7432f2c-c1fb-11e2-8edc-1cc1dee63420"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": ""
+        }
+    ],
+    "findable": "1",
+    "id": "2226",
+    "img_uri": "",
+    "incoming": [],
+    "is_thing": 1,
+    "iso": "",
+    "kind": "ARTEFACT",
+    "lang": {
+        "nl": {
+            "body": "<h3>How might we bring questions of proportionality into our designs?</h3>\n\n<p>What could it mean to design for variable scale, enabling us to upscale and downscale depending on the context or purpose. How can we know when our designs are out of proportion to the qualities the purport to achieve? How might we design for an \u201cappropriate scale\u201d that is neither to large or too small. What might design for \u201climited size\u201d or \u201cselective slowness\u201d look like?</p>\n\n\n<h3>Background proportionality.</h3>\n\n<p>Sustainist design is more concerned with appropriateness, with a greater eye for context as a critical factor. </p>\n\n<p>We know that bigger isn\u2019t necessarily better. But neither can we simply follow the adagium of E.F. Schumacher that \u201csmall is beautiful\u201d. A sustainist perspective asks what scale is appropriate in a design. It ask us to proportion things rather than following economies of scale as the only logic. </p>\n\n<p>Sustainism question the modernist ideas of large-scale and high-speed. The prevailing idea of \u201cspeed\u201d is an instructive example of how we have become trapped in a modernist perspective. For most of us,  \u201cspeed\u201d means things going fast. But actually the concept of \u201cspeed\u201d is an entity that is comparable to temperature or resolution, in that it can be either \u201chigh\u201d or \u201clow\u201d High speed or low speed.  Yet when we say \u201cspeed\u201d we rarely think that it also covers low-speeds, like in slowness.  </p>\n\n<p>In a sustainist culture speed, high or low, becomes a design question, a strategic choice rather than an unquestioned assumption. It prompts us to ask for \u201cappropriate speed,\u201d and raise questions of \u201cselective slowness\u201d. Such a sustainist mentality can be seen in development such as \u201cslow food\u201d or \u201cslow money\u201d, and recently the talk is also about planning \u201cslow cities\u201d or \u201cslow architecture\u201d.  These are questions of proportionality, not of absolute magnitude or scale. They express new qualities that can be purposely included into our design briefs.</p>",
+            "body_wikified": "<h3>How might we bring questions of proportionality into our designs?</h3>\n\n<p>What could it mean to design for variable scale, enabling us to upscale and downscale depending on the context or purpose. How can we know when our designs are out of proportion to the qualities the purport to achieve? How might we design for an \u201cappropriate scale\u201d that is neither to large or too small. What might design for \u201climited size\u201d or \u201cselective slowness\u201d look like?</p>\n\n\n<h3>Background proportionality.</h3>\n\n<p>Sustainist design is more concerned with appropriateness, with a greater eye for context as a critical factor. </p>\n\n<p>We know that bigger isn\u2019t necessarily better. But neither can we simply follow the adagium of E.F. Schumacher that \u201csmall is beautiful\u201d. A sustainist perspective asks what scale is appropriate in a design. It ask us to proportion things rather than following economies of scale as the only logic. </p>\n\n<p>Sustainism question the modernist ideas of large-scale and high-speed. The prevailing idea of \u201cspeed\u201d is an instructive example of how we have become trapped in a modernist perspective. For most of us,  \u201cspeed\u201d means things going fast. But actually the concept of \u201cspeed\u201d is an entity that is comparable to temperature or resolution, in that it can be either \u201chigh\u201d or \u201clow\u201d High speed or low speed.  Yet when we say \u201cspeed\u201d we rarely think that it also covers low-speeds, like in slowness.  </p>\n\n<p>In a sustainist culture speed, high or low, becomes a design question, a strategic choice rather than an unquestioned assumption. It prompts us to ask for \u201cappropriate speed,\u201d and raise questions of \u201cselective slowness\u201d. Such a sustainist mentality can be seen in development such as \u201cslow food\u201d or \u201cslow money\u201d, and recently the talk is also about planning \u201cslow cities\u201d or \u201cslow architecture\u201d.  These are questions of proportionality, not of absolute magnitude or scale. They express new qualities that can be purposely included into our design briefs.</p>",
+            "chapeau": "",
+            "intro": "<p>Sustainist culture shifts design questions towards questions of appropriate size and scale.  We question that bigger isn\u2019t necessarily better. Or that faster-is-always-better.\u201d In designing for size and speed, the transition into sustainism implies a shift in design perspective. Towards the human scale, the appropriate scale. It asks us to (re-) proportion things: it shifts our focus from scale to proportionality.</p>",
+            "intro_wikified": "<p>Sustainist culture shifts design questions towards questions of appropriate size and scale.  We question that bigger isn\u2019t necessarily better. Or that faster-is-always-better.\u201d In designing for size and speed, the transition into sustainism implies a shift in design perspective. Towards the human scale, the appropriate scale. It asks us to (re-) proportion things: it shifts our focus from scale to proportionality.</p>",
+            "label": [],
+            "language": "nl",
+            "redirect_uri": "",
+            "subtitle": "<em>\u201cSmall (and slow) is beautiful\u201d.</em>",
+            "title": "Designing for proportionality",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "matchable": "1",
+    "modifier_id": "http://www.thebeach.nu/id/1289",
+    "modify_date": "2013-05-21 11:50:57",
+    "name": {
+        "full": "Designing for proportionality"
+    },
+    "note": "",
+    "org_language": "nl",
+    "outgoing": {
+        "FIGURE": {
+            "e7432f2c-c1fb-11e2-8edc-1cc1dee63420": "2336"
+        },
+        "RELATED": {
+            "ba587590-d588-11e1-97c3-1cc1dee63420": "2369",
+            "bc65388c-d588-11e1-97c3-1cc1dee63420": "2219"
+        }
+    },
+    "owner_id": "http://www.thebeach.nu/id/63",
+    "picture": {
+        "att_id_ref": "2336",
+        "edg_id": "11215",
+        "height": "458",
+        "is_picture": "1",
+        "mime": "image/png",
+        "orientation": "1",
+        "width": "625"
+    },
+    "props": {
+        "hide_actions": "0",
+        "hide_title": "1"
+    },
+    "pub_date_end": "2037-12-31 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2012-02-19 14:24:07",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:pubsub.creatieve-innovatie.nl?;node=id/2226",
+    "rating": {
+        "0": [
+            "0.692857",
+            "5"
+        ],
+        "1": [
+            "1",
+            "0"
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0",
+            "1"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            "0.785714",
+            "0"
+        ],
+        "6": [
+            "1",
+            "0"
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "2",
+        "recent_views": "0",
+        "views": "136"
+    },
+    "resource_uri": "http://www.thebeach.nu/id/2226",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "BY,NC,SA",
+    "share": "1",
+    "symbolic_name": "",
+    "text": {
+        "body": "<h3>How might we bring questions of proportionality into our designs?</h3>\n\n<p>What could it mean to design for variable scale, enabling us to upscale and downscale depending on the context or purpose. How can we know when our designs are out of proportion to the qualities the purport to achieve? How might we design for an \u201cappropriate scale\u201d that is neither to large or too small. What might design for \u201climited size\u201d or \u201cselective slowness\u201d look like?</p>\n\n\n<h3>Background proportionality.</h3>\n\n<p>Sustainist design is more concerned with appropriateness, with a greater eye for context as a critical factor. </p>\n\n<p>We know that bigger isn\u2019t necessarily better. But neither can we simply follow the adagium of E.F. Schumacher that \u201csmall is beautiful\u201d. A sustainist perspective asks what scale is appropriate in a design. It ask us to proportion things rather than following economies of scale as the only logic. </p>\n\n<p>Sustainism question the modernist ideas of large-scale and high-speed. The prevailing idea of \u201cspeed\u201d is an instructive example of how we have become trapped in a modernist perspective. For most of us,  \u201cspeed\u201d means things going fast. But actually the concept of \u201cspeed\u201d is an entity that is comparable to temperature or resolution, in that it can be either \u201chigh\u201d or \u201clow\u201d High speed or low speed.  Yet when we say \u201cspeed\u201d we rarely think that it also covers low-speeds, like in slowness.  </p>\n\n<p>In a sustainist culture speed, high or low, becomes a design question, a strategic choice rather than an unquestioned assumption. It prompts us to ask for \u201cappropriate speed,\u201d and raise questions of \u201cselective slowness\u201d. Such a sustainist mentality can be seen in development such as \u201cslow food\u201d or \u201cslow money\u201d, and recently the talk is also about planning \u201cslow cities\u201d or \u201cslow architecture\u201d.  These are questions of proportionality, not of absolute magnitude or scale. They express new qualities that can be purposely included into our design briefs.</p>",
+        "chapeau": "",
+        "intro": "<p>Sustainist culture shifts design questions towards questions of appropriate size and scale.  We question that bigger isn\u2019t necessarily better. Or that faster-is-always-better.\u201d In designing for size and speed, the transition into sustainism implies a shift in design perspective. Towards the human scale, the appropriate scale. It asks us to (re-) proportion things: it shifts our focus from scale to proportionality.</p>",
+        "label": [],
+        "language": "nl",
+        "redirect_uri": "",
+        "subtitle": "<em>\u201cSmall (and slow) is beautiful\u201d.</em>",
+        "title": "Designing for proportionality",
+        "title_short": ""
+    },
+    "theme": [
+        "2219",
+        "2369"
+    ],
+    "thg_id": "2226",
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "link": {
+            "level": "PREDICATE",
+            "predicate": "KNOWS_OF"
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": ""
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": ""
+        }
+    },
+    "type": {
+        "symbolic": []
+    },
+    "uri": "/2226/nl/designing-for-proportionality",
+    "uri_abs": "http://www.thebeach.nu/2226/nl/designing-for-proportionality",
+    "views": "136"
+}

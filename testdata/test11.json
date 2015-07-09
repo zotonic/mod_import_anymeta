@@ -1,0 +1,163 @@
+{
+    "activity": "39",
+    "alt_uri": "",
+    "authoritative": "1",
+    "axo": "metadata",
+    "axo_section": "content",
+    "category": [],
+    "create_date": "2012-02-19 13:02:01",
+    "creator_id": "http://www.thebeach.nu/id/63",
+    "edge": [
+        {
+            "edge": {
+                "agent_id": null,
+                "authoritative": "1",
+                "create_date": null,
+                "creator_id": null,
+                "data": null,
+                "modifier_id": null,
+                "modify_date": "2012-03-30 17:02:04",
+                "object_id": "http://www.thebeach.nu/id/2261",
+                "order": "9999",
+                "owner_id": null,
+                "pending_import": "0",
+                "predicate": "ICON",
+                "predicate_id": "http://mediamatic.nl/ns/anymeta/2008/term/icon",
+                "publish_date": "2012-04-03 15:07:16",
+                "uuid": "4fa650ba-7a79-11e1-b970-1cc1dee63420"
+            },
+            "kind": "ATTACHMENT",
+            "symbolic_name": "BEACH_002_WEB_TOEGEPAST-1.JPG"
+        }
+    ],
+    "findable": "0",
+    "id": "2219",
+    "img_uri": "http://static.mediamatic.nl/f/hkxf/image/314/2261-600-69.png",
+    "incoming": [],
+    "is_thing": 1,
+    "iso": "",
+    "kind": "THEME",
+    "lang": {
+        "nl": {
+            "body": "<h2>SUSTAINIST DESIGN PERSPECTIVE</h2>\n\n<p>Design does not happen in a vacuum. Applying design methods and design thinking to societal challenges requires a relevant framework that provides context for the addressing the issues of today.  </p>\n\n<p>Designing for a world that is more interconnected and interdependent than ever before, requires an integrative perspective. We view social design from the cultural perspective of \u201cSustainism\u201d. </p>\n\n<p>Sustainism is the new \u201cethos for design\u201d (as the New York Times has called it). It has evolved out of the combination of global connectivity, localism, and sustainability. </p>\n\n<p> Although \u201cSustainist culture\u201d clearly connects to the sustainability movement, it\u2019s much more than \u201cgreen.\u201d Sustainism is a mindset that is as much concerned with the internet, social media, open-source and global connectivity. </p>\n\n<p>Sustainism is also the culture of sharing and networking, and involves new approaches to community and our sense of the local. </p>\n\n<p>The emerging culture of sustainism has been called the new \u201coperating context\u201d of our time. It reframes the issues and provides new insights and opportunities for social design.</p>\n\n<p>The design challenges we pose are open invitations in \u201csustainist design thinking\u201d and \u201csustainist design practice.\u201d </p>\n\n<p>Open Sustainist Design provides a platform for sharing past experiences and for charting the future for social design.  </p>\n\n\n<h2>SOCIAL DESIGN IN THE CONTEXT OF SUSTAINISM</h2>\n\n<p>Sustainism not only captures the zeitgeist, it also provides us with a perspective from which to re-view the social design agenda. </p>\n\n<p>Sustainism changes the context for design. The contours of this changing environment are already visible: networks and connectivity become increasingly important, new forms of localism are emerging, and so are more open practices and sustainable strategies and lifestyles. </p>\n\n<p>Connectivity, global connectedness, localism, open exchange and sustainability will become the drivers for innovation.  Things such as time, information, community, creativity become new valued resources, socially as well as economically. These will inform the design briefs of the future.</p>\n\n<p>The perspective of sustainism captures a number of emerging sustainist qualities that can become the basis for a new set of social design criteria.</p>",
+            "body_wikified": "<h2>SUSTAINIST DESIGN PERSPECTIVE</h2>\n\n<p>Design does not happen in a vacuum. Applying design methods and design thinking to societal challenges requires a relevant framework that provides context for the addressing the issues of today.  </p>\n\n<p>Designing for a world that is more interconnected and interdependent than ever before, requires an integrative perspective. We view social design from the cultural perspective of \u201cSustainism\u201d. </p>\n\n<p>Sustainism is the new \u201cethos for design\u201d (as the New York Times has called it). It has evolved out of the combination of global connectivity, localism, and sustainability. </p>\n\n<p> Although \u201cSustainist culture\u201d clearly connects to the sustainability movement, it\u2019s much more than \u201cgreen.\u201d Sustainism is a mindset that is as much concerned with the internet, social media, open-source and global connectivity. </p>\n\n<p>Sustainism is also the culture of sharing and networking, and involves new approaches to community and our sense of the local. </p>\n\n<p>The emerging culture of sustainism has been called the new \u201coperating context\u201d of our time. It reframes the issues and provides new insights and opportunities for social design.</p>\n\n<p>The design challenges we pose are open invitations in \u201csustainist design thinking\u201d and \u201csustainist design practice.\u201d </p>\n\n<p>Open Sustainist Design provides a platform for sharing past experiences and for charting the future for social design.  </p>\n\n\n<h2>SOCIAL DESIGN IN THE CONTEXT OF SUSTAINISM</h2>\n\n<p>Sustainism not only captures the zeitgeist, it also provides us with a perspective from which to re-view the social design agenda. </p>\n\n<p>Sustainism changes the context for design. The contours of this changing environment are already visible: networks and connectivity become increasingly important, new forms of localism are emerging, and so are more open practices and sustainable strategies and lifestyles. </p>\n\n<p>Connectivity, global connectedness, localism, open exchange and sustainability will become the drivers for innovation.  Things such as time, information, community, creativity become new valued resources, socially as well as economically. These will inform the design briefs of the future.</p>\n\n<p>The perspective of sustainism captures a number of emerging sustainist qualities that can become the basis for a new set of social design criteria.</p>",
+            "chapeau": "",
+            "intro": "<p>Social design thinking, doing and sharing. That is what the Open Sustainist Design challenge is all about.  It sets out to bring together \u2018best practices\u2019 and it invites insights and ideas for social design in different contexts\u2014 from urban life and architecture, to energy, food, and the environment. </p>\n\n\n<h3><em>Sustainism implies new criteria for design, involving locality, connectedness, time, proportionality and sharing, as well environmental sustainability.</em></h3>\n\n<p>\u2014 Michiel Schwarz &amp; Joost Elffers, authors of &quot;Sustainism Is the New Modernism.&quot;</p>",
+            "intro_wikified": "<p>Social design thinking, doing and sharing. That is what the Open Sustainist Design challenge is all about.  It sets out to bring together \u2018best practices\u2019 and it invites insights and ideas for social design in different contexts\u2014 from urban life and architecture, to energy, food, and the environment. </p>\n\n\n<h3><em>Sustainism implies new criteria for design, involving locality, connectedness, time, proportionality and sharing, as well environmental sustainability.</em></h3>\n\n<p>\u2014 Michiel Schwarz &amp; Joost Elffers, authors of &quot;Sustainism Is the New Modernism.&quot;</p>",
+            "label": [],
+            "language": "nl",
+            "redirect_uri": "",
+            "subtitle": "Share your experience and thoughts",
+            "title": "Open Book for Sustainist Design",
+            "title_short": ""
+        }
+    },
+    "masked": "0",
+    "matchable": "0",
+    "modifier_id": "http://www.thebeach.nu/id/2304",
+    "modify_date": "2012-08-15 12:52:56",
+    "note": "",
+    "org_language": "",
+    "outgoing": {
+        "ICON": {
+            "4fa650ba-7a79-11e1-b970-1cc1dee63420": "2261"
+        }
+    },
+    "owner_id": "http://www.thebeach.nu/id/63",
+    "picture": {
+        "att_id_ref": "2261",
+        "edg_id": "6251",
+        "height": "108",
+        "is_picture": "1",
+        "mime": "image/png",
+        "orientation": "1",
+        "width": "950"
+    },
+    "props": {
+        "hide_actions": "0",
+        "hide_title": "0"
+    },
+    "pub_date_end": "2037-12-31 00:00:00",
+    "pub_date_start": "1970-01-01 00:00:00",
+    "publish_date": "2012-02-19 13:02:01",
+    "pubstate": "1",
+    "pubsub_xmpp_uri": "xmpp:pubsub.creatieve-innovatie.nl?;node=id/2219",
+    "rating": {
+        "0": [
+            "0.2",
+            "3"
+        ],
+        "1": [
+            0,
+            0
+        ],
+        "2": [
+            0,
+            0
+        ],
+        "3": [
+            "0",
+            "1"
+        ],
+        "4": [
+            0,
+            0
+        ],
+        "5": [
+            0,
+            0
+        ],
+        "6": [
+            "1",
+            "0"
+        ],
+        "7": [
+            "0",
+            "0"
+        ],
+        "activity": "39",
+        "recent_views": "0",
+        "views": "6"
+    },
+    "resource_uri": "http://www.thebeach.nu/id/2219",
+    "retirement_date": "9999-01-01 00:00:00",
+    "rights": "",
+    "share": "1",
+    "symbolic_name": "THEME_OPENBOOK",
+    "text": {
+        "body": "<h2>SUSTAINIST DESIGN PERSPECTIVE</h2>\n\n<p>Design does not happen in a vacuum. Applying design methods and design thinking to societal challenges requires a relevant framework that provides context for the addressing the issues of today.  </p>\n\n<p>Designing for a world that is more interconnected and interdependent than ever before, requires an integrative perspective. We view social design from the cultural perspective of \u201cSustainism\u201d. </p>\n\n<p>Sustainism is the new \u201cethos for design\u201d (as the New York Times has called it). It has evolved out of the combination of global connectivity, localism, and sustainability. </p>\n\n<p> Although \u201cSustainist culture\u201d clearly connects to the sustainability movement, it\u2019s much more than \u201cgreen.\u201d Sustainism is a mindset that is as much concerned with the internet, social media, open-source and global connectivity. </p>\n\n<p>Sustainism is also the culture of sharing and networking, and involves new approaches to community and our sense of the local. </p>\n\n<p>The emerging culture of sustainism has been called the new \u201coperating context\u201d of our time. It reframes the issues and provides new insights and opportunities for social design.</p>\n\n<p>The design challenges we pose are open invitations in \u201csustainist design thinking\u201d and \u201csustainist design practice.\u201d </p>\n\n<p>Open Sustainist Design provides a platform for sharing past experiences and for charting the future for social design.  </p>\n\n\n<h2>SOCIAL DESIGN IN THE CONTEXT OF SUSTAINISM</h2>\n\n<p>Sustainism not only captures the zeitgeist, it also provides us with a perspective from which to re-view the social design agenda. </p>\n\n<p>Sustainism changes the context for design. The contours of this changing environment are already visible: networks and connectivity become increasingly important, new forms of localism are emerging, and so are more open practices and sustainable strategies and lifestyles. </p>\n\n<p>Connectivity, global connectedness, localism, open exchange and sustainability will become the drivers for innovation.  Things such as time, information, community, creativity become new valued resources, socially as well as economically. These will inform the design briefs of the future.</p>\n\n<p>The perspective of sustainism captures a number of emerging sustainist qualities that can become the basis for a new set of social design criteria.</p>",
+        "chapeau": "",
+        "intro": "<p>Social design thinking, doing and sharing. That is what the Open Sustainist Design challenge is all about.  It sets out to bring together \u2018best practices\u2019 and it invites insights and ideas for social design in different contexts\u2014 from urban life and architecture, to energy, food, and the environment. </p>\n\n\n<h3><em>Sustainism implies new criteria for design, involving locality, connectedness, time, proportionality and sharing, as well environmental sustainability.</em></h3>\n\n<p>\u2014 Michiel Schwarz &amp; Joost Elffers, authors of &quot;Sustainism Is the New Modernism.&quot;</p>",
+        "label": [],
+        "language": "nl",
+        "redirect_uri": "",
+        "subtitle": "Share your experience and thoughts",
+        "title": "Open Book for Sustainist Design",
+        "title_short": ""
+    },
+    "thg_id": "2219",
+    "trust": {
+        "edit": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "link": {
+            "level": "ME",
+            "predicate": ""
+        },
+        "react": {
+            "level": "MEMBERS",
+            "predicate": ""
+        },
+        "view": {
+            "level": "EVERYONE",
+            "predicate": ""
+        }
+    },
+    "type": {
+        "symbolic": []
+    },
+    "uri": "/2219/nl/open-book-for-sustainist-design",
+    "uri_abs": "http://www.thebeach.nu/2219/nl/open-book-for-sustainist-design",
+    "views": "6"
+}

@@ -40,7 +40,7 @@ test(Context0) ->
     Context = z_acl:sudo(Context0),
     Files = files("test*.json", Context),
 
-    [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId]
+    [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId, ThemeItemId, ThemeId]
         = lists:map(fun(Seq) -> json_file_to_id(lists:nth(Seq, Files), Context) end, lists:seq(1, length(Files))),
 
     %% Test artikel
@@ -88,6 +88,9 @@ test(Context0) ->
 
     %% test the org
     [Image4Id] = m_edge:objects(OrgId, depiction, Context),
+    
+    %% test if content group stub was correctly replaced
+    ThemeId = m_rsc:p(ThemeItemId, content_group_id, Context),
     
     lager:info("All tests ok.").
 
