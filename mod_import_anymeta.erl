@@ -87,6 +87,23 @@ init(Context) ->
                 create index import_anymeta_rsc_id on import_anymeta(rsc_id)
             ", Context),
             ok
+    end,
+    
+    case z_db:table_exists(anymeta_redirects, Context) of
+        true ->
+            ok;
+        false ->
+            [] = z_db:q("
+                create table anymeta_redirects (
+                    redirect_uri character varying(255) not null,
+                    rsc_id int not null,
+                    rsc_uri character varying(255) not null,
+                    host character varying(255),
+                    
+                    constraint anymeta_redirects_pkey primary key (redirect_uri, host)
+                )
+            ", Context),
+            ok
     end.
 
 
@@ -420,6 +437,8 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             RscUri = proplists:get_value(<<"resource_uri">>, Thing),
+            {struct, Text} = proplists:get_value(<<"text">>, Thing),
+            RedirectUri = proplists:get_value(<<"redirect_uri">>, Text),
             Authoritative = proplists:get_value(<<"authoritative">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
             Texts2 = group_by_lang(Texts1),
@@ -440,7 +459,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                      ++ fetch_content_group(Thing, Host, Context)
                      ++ fetch_media(Thing)
                      ++ fetch_address(Thing)
-                     ++ fetch_name(Thing) 
+                     ++ fetch_name(Thing)
                      ++ Texts3,
 
             Fields = case fetch_website(Websites) of
@@ -459,7 +478,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             Fields3 = fix_rsc_name(Fields2),
             FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields3, Context),
             
-            case write_rsc(Host, AnymetaId, FieldsFinal, Stats, Context) of
+            case write_rsc(Host, AnymetaId, RedirectUri, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
@@ -913,7 +932,7 @@ map_language(<<"jp">>) -> <<"ja">>;
 map_language(Code) -> Code.
 
 
-write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
+write_rsc(Host, AnymetaId, RedirectUri, Fields, Stats, Context) ->
     RscUri = proplists:get_value(anymeta_rsc_uri, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
     case check_previous_import(Host, RscUri, Context) of
@@ -922,6 +941,7 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
             {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
             register_import_update(Host, RscId, AnymetaId, RscUri, Context),
+            register_redirect(RedirectUri, RscUri, RscId, Host, Context),
             {ok, RscId, Stats};
         none -> 
             Name = proplists:get_value(name, Fields),
@@ -945,6 +965,7 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
                     {ok, RscId} = m_rsc_update:insert(Fields, [{escape_texts, false}, is_import], Context)
             end,
             register_import(Host, RscId, AnymetaId, RscUri, Context),
+            register_redirect(RedirectUri, RscUri, RscId, Host, Context),
             {ok, RscId, Stats}
     end.
 
@@ -1009,6 +1030,19 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
                 where host = $2 and rsc_uri = $3",
                [AnymetaId, Host, RscUri],
                Context).
+
+    register_redirect(RedirectUri, RscUri, RscId, Host, Context) ->
+        case RedirectUri of
+          undefined ->
+            false;
+          <<>> ->
+            false;
+          _ ->
+            z_db:q("insert into anymeta_redirects (redirect_uri, rsc_uri, rsc_id, host)
+                    values ($1, $2, $3, $4)",
+                   [RedirectUri, RscUri, RscId, Host],
+                   Context)
+        end.
 
     check_existing_rsc(Fields, Context) ->
         case proplists:get_value(name, Fields) of

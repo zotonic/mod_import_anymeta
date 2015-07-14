@@ -316,7 +316,7 @@
         "intro": "<p>Lorem ipsum dolor sit amet, consectetuer adipiscing</p>",
         "label": [],
         "language": "en",
-        "redirect_uri": "",
+        "redirect_uri": "http://www.zotonic.is.beter",
         "subtitle": "",
         "title": "Article with images",
         "title_short": ""
