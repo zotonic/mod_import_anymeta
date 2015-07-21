@@ -98,9 +98,7 @@ init(Context) ->
                     redirect_uri character varying(255) not null,
                     rsc_id int not null,
                     rsc_uri character varying(255) not null,
-                    host character varying(255),
-                    
-                    constraint anymeta_redirects_pkey primary key (redirect_uri, host)
+                    host character varying(255)
                 )
             ", Context),
             ok
