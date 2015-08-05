@@ -344,9 +344,9 @@ get_request(Method, Url) ->
 
 
 %% @doc Fetch all items from the given host
-import_loop(Host, _From, undefined, Secret, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 100 ->
+import_loop(Host, _From, undefined, Secret, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 500 ->
     % Signal the end of the import to the UI
-    progress("STOP - found more than 100 consequetive not founds.<br/>", Context),
+    progress("STOP - found more than 500 consequetive not founds.<br/>", Context),
     handle_delayed(Delayed, Host, Secret, Stats#stats{delayed=[]}, Context);
 import_loop(Host, From, To, Secret, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
@@ -421,6 +421,9 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             RscUri = proplists:get_value(<<"resource_uri">>, Thing),
             Authoritative = proplists:get_value(<<"authoritative">>, Thing),
+            Rights = proplists:get_value(<<"rights">>, Thing),
+            Findable = proplists:get_value(<<"findable">>, Thing),
+            Matchable = proplists:get_value(<<"matchable">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
             Texts2 = group_by_lang(Texts1),
             Websites = proplists:get_value(website, Texts2),
@@ -434,7 +437,10 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                         {anymeta_rsc_uri, RscUri},
                         {anymeta_host, Host},
                         {language, Langs},
-                        {is_authoritative, Authoritative}
+                        {is_authoritative, Authoritative},
+                        {rights, Rights},
+                        {findable, Findable},
+                        {matchable, Matchable}
                         |OtherFields
                      ]
                      ++ fetch_content_group(Thing, Host, Context)
@@ -464,7 +470,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(Host, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
-                    Stats4 = import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context),
+                    Stats4 = import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context),
 
                     case proplists:get_value(<<"file">>, Thing) of
                         undefined ->
@@ -553,16 +559,20 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
 
     fetch_content_group(Thing, Host, Context) ->
         case proplists:get_value(<<"theme">>, Thing) of
+            none ->
+                [];
             undefined ->
                 [];
-            ThemeIds ->
-                AnyId = lists:nth(1, ThemeIds),
+            [AnyId|_] ->
                 % find the content group or create one
-                case find_any_id(AnyId, Host, Context) of
+                CurrRscUri = binary_to_list(proplists:get_value(<<"resource_uri">>, Thing)),
+                BaseUri = string:substr(CurrRscUri, 1, string:str(CurrRscUri, "/id/") + 3),
+                RscUri = BaseUri ++ binary_to_list(AnyId),
+                
+                case check_previous_import(Host, RscUri, Context) of
                     {ok, ZotonicId} ->
                         [{content_group_id, ZotonicId}];
-                    undefined ->
-                        RscUri = binary_to_list(iolist_to_binary(Host ++ "/id/" ++ AnyId)),
+                    none ->
                         Ps = [
                             {category, content_group},
                             {is_published, false},
@@ -893,7 +903,7 @@ map_kind_type(<<"PERSON">>, _) -> person;
 map_kind_type(<<"ROLE">>, _) -> predicate;
 map_kind_type(<<"SET">>, _) -> collection;
 map_kind_type(<<"TAG">>, _) -> keyword;
-map_kind_type(<<"THEME">>, _) -> anymeta_theme;
+map_kind_type(<<"THEME">>, _) -> content_group;
 map_kind_type(<<"TOPIC">>, _) -> anymeta_topic;
 map_kind_type(<<"TYPE">>, _) -> anymeta_type;
 map_kind_type(_, _) -> other.
@@ -918,7 +928,12 @@ write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
     ensure_category(proplists:get_value(category, Fields), Context),
     case check_previous_import(Host, RscUri, Context) of
         {ok, RscId} ->
-            Fields1 = proplists:delete(name, Fields),
+            case m_rsc:get(proplists:get_value(name, Fields), Context) of
+              undefined ->
+                Fields1 = Fields;
+              _FoundRsc ->
+                Fields1 = proplists:delete(name, Fields)
+            end,
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
             {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
             register_import_update(Host, RscId, AnymetaId, RscUri, Context),

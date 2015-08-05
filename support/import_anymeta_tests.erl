@@ -4,14 +4,13 @@
 
 -include_lib("../include/mod_import_anymeta.hrl").
 
-
 test_full(Context0) ->
     Context = z_acl:sudo(Context0),
     mod_import_anymeta:init(Context),
 
     Host = "test.com",
 
-    Files = files(Context),
+    Files = files("test*.json", Context),
     FilesWithThingId = lists:zip(lists:seq(1000, 1000+length(Files)-1), Files),
 
     lists:foldl(
@@ -27,15 +26,21 @@ test_full(Context0) ->
       #stats{},
       FilesWithThingId
      ),
-
+    
     %%Stats = handle_delayed(Stats1#stats.delayed, Host, [], [], true, Stats1#stats{delayed=[]}, Context),
     test(Context).
+    
+update_thing(ThingId, Context) ->
+    [File | _ ] = files("update_" ++ integer_to_list(ThingId) ++ ".json", Context),
+    {ok, Body} = file:read_file(File),
+    {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
+    mod_import_anymeta:import_thing("test.com", ThingId, Thing, #stats{}, Context).
 
 test(Context0) ->
     Context = z_acl:sudo(Context0),
-    Files = files(Context),
+    Files = files("test*.json", Context),
 
-    [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId]
+    [FredId, Image1Id, ArticleId, Image2Id, Image3Id, _Keyword1Id, _Keyword2Id, _Keyword3Id, Image4Id, OrgId, ThemeItemId, ThemeId]
         = lists:map(fun(Seq) -> json_file_to_id(lists:nth(Seq, Files), Context) end, lists:seq(1, length(Files))),
 
     %% Test artikel
@@ -59,6 +64,17 @@ test(Context0) ->
     <<"Lorem ipsum dolor sit amet, consectetuer adipiscing">> = proplists:get_value(en, TI),
     <<"Tekst in het nederlands">> = proplists:get_value(nl, TI),
 
+    %% Test import of unique name
+    <<"articlewithimages">> = m_rsc:p(ArticleId, name, Context),
+    
+    %% Test update of unique name
+    update_thing(1002, Context),
+    <<"update_articlewithimages">> = m_rsc:p(ArticleId, name, Context),
+    
+    %% Test skipping of unique name that already exist
+    <<"personfred">> = m_rsc:p(FredId, name, Context),
+    update_thing(1000, Context),
+    <<"personfred">> = m_rsc:p(FredId, name, Context),
     
     %% Test persoon
     <<"FredP">> = z_trans:trans(m_rsc:p(FredId, title, Context), Context),
@@ -73,11 +89,14 @@ test(Context0) ->
     %% test the org
     [Image4Id] = m_edge:objects(OrgId, depiction, Context),
     
+    %% test if content group stub was correctly replaced
+    ThemeId = m_rsc:p(ThemeItemId, content_group_id, Context),
+    
     lager:info("All tests ok.").
 
 
-files(Context) ->
-    filelib:wildcard(z_path:module_dir(mod_import_anymeta, Context) ++ "/testdata/*.json").
+files(Glob, Context) ->
+    filelib:wildcard(z_path:module_dir(mod_import_anymeta, Context) ++ "/testdata/" ++ Glob).
 
 json_file_to_id(File, Context) ->
     {ok, Body} = file:read_file(File),
