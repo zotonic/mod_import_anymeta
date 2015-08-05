@@ -17,7 +17,7 @@ test_full(Context0) ->
       fun({ThingId, Filename}, Stats) ->
               {ok, Body} = file:read_file(Filename),
               {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
-              Stats1 = mod_import_anymeta:import_thing(Host, ThingId, Thing, Stats, Context),
+              Stats1 = mod_import_anymeta:import_thing(Host, ThingId, Thing, yes, Stats, Context),
               Stats1#stats{
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
@@ -34,7 +34,7 @@ update_thing(ThingId, Context) ->
     [File | _ ] = files("update_" ++ integer_to_list(ThingId) ++ ".json", Context),
     {ok, Body} = file:read_file(File),
     {struct, Thing} = mochijson2:decode(z_string:sanitize_utf8(Body)),
-    mod_import_anymeta:import_thing("test.com", ThingId, Thing, #stats{}, Context).
+    mod_import_anymeta:import_thing("test.com", ThingId, Thing, yes, #stats{}, Context).
 
 test(Context0) ->
     Context = z_acl:sudo(Context0),

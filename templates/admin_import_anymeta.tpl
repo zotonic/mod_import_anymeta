@@ -88,6 +88,17 @@
                         <p class="help-block">{_ Authorization secret for importing non-public things _}</p>
                     </div>
                 </div>
+
+                <div class="form-group row">
+                    <label class="control-label col-md-3" for="sysadmin-pw">{_ Import blobs _}</label>
+                    <div class="col-md-4">
+                        <select class="form-control" name="blobs" id="import-blobs">
+                            <option value="y">{_ Things with their blobs _}</option>
+                            <option value="n">{_ Things only, don’t download blobs _}</option>
+                            <option value="b">{_ Blobs only, don’t update imported things _}</option>
+                        </select>
+                    </div>
+                </div>
 		        
 		    <div style="display:none" class="alert alert-danger" id="import-error">
 		        {_ Could not start import, unexpected result from remote server. _}

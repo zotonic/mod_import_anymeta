@@ -37,10 +37,10 @@
     event/2,
     
     find_any_id/3,
-    do_import/5,
-    import_thing/5,
+    do_import/6,
+    import_thing/6,
     test_host/4,
-    get_thing/4
+    get_thing/5
 ]).
 
 -include_lib("zotonic.hrl").
@@ -187,12 +187,17 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             From     = z_convert:to_integer(z_context:get_q_validated("start-id", Context)),
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
+            Blobs    = case z_convert:to_list(z_context:get_q("blobs", Context)) of
+                            "n" -> no;
+                            "y" -> yes;
+                            "b" -> blobsonly
+                       end,
 
             lager:info("Anymeta import started."),
 
             z_context:set_session(anymeta_host, Host, Context),
             
-            case do_import(Host, From, To, Secret, Context) of
+            case do_import(Host, From, To, Secret, Blobs, Context) of
                 ok ->
                     z_render:wire([{fade_in, [{target, "import-started"}]}, {hide, [{target, Form}]}], Context);
                 {error, nxdomain} ->
@@ -231,25 +236,25 @@ find_any_id(AnyId, Host, Context) when is_integer(AnyId)->
     end.
 
 
-do_import(Host, undefined, To, Secret, Context) ->
-    do_import(Host, 1, To, Secret, Context);
-do_import(Host, From, To, Secret, Context) ->
+do_import(Host, undefined, To, Secret, Blobs, Context) ->
+    do_import(Host, 1, To, Secret, Blobs, Context);
+do_import(Host, From, To, Secret, Blobs, Context) ->
     case test_host(From, Host, Secret, Context) of
         ok ->
-            start_import(Host, From, To, Secret, Context);
+            start_import(Host, From, To, Secret, Blobs, Context);
         Err ->
             Err
     end.
 
-    start_import(Host, From, To, Secret, Context) ->
+    start_import(Host, From, To, Secret, Blobs, Context) ->
         ContextPruned = z_context:prune_for_async(Context),
         spawn(fun() ->
-                    import_loop(Host, From, To, Secret, #stats{}, ContextPruned)
+                    import_loop(Host, From, To, Secret, Blobs, #stats{}, ContextPruned)
               end),
         ok.
     
     test_host(From, Host, Secret, Context) ->
-        Url = get_url(From, Host, Secret),
+        Url = get_url(From, Host, Secret, no),
         progress(io_lib:format("TEST HOST: pinging ~p ...", [Url]), Context),
         case get_request(get, Url) of
             {ok, {{_, 200, _},Hs, _}} ->
@@ -297,11 +302,14 @@ do_import(Host, From, To, Secret, Context) ->
         end.
 
 
-get_url(Id, Host, Secret) ->
-    "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret.
+get_url(Id, Host, Secret, Blobs) ->
+    "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret++blobs_arg(Blobs).
 
-get_thing(Id, Hostname, Secret, Context) ->
-    Url = get_url(Id, Hostname, Secret),
+blobs_arg(no) -> "&skip-blob=1";
+blobs_arg(_) -> "".
+
+get_thing(Id, Hostname, Secret, Blobs, Context) ->
+    Url = get_url(Id, Hostname, Secret, Blobs),
     case get_request(get, Url) of
         {ok, {
             {_HTTP, 200, _OK},
@@ -344,35 +352,35 @@ get_request(Method, Url) ->
 
 
 %% @doc Fetch all items from the given host
-import_loop(Host, _From, undefined, Secret, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 500 ->
+import_loop(Host, _From, undefined, Secret, Blobs, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 500 ->
     % Signal the end of the import to the UI
     progress("STOP - found more than 500 consequetive not founds.<br/>", Context),
-    handle_delayed(Delayed, Host, Secret, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Secret, Stats, Context) when is_integer(To), From > To ->
+    handle_delayed(Delayed, Host, Secret, Blobs, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Secret, Blobs, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
-    handle_delayed(Stats#stats.delayed, Host, Secret, Stats#stats{delayed=[]}, Context);
-import_loop(Host, From, To, Secret, Stats, Context) ->
+    handle_delayed(Stats#stats.delayed, Host, Secret, Blobs, Stats#stats{delayed=[]}, Context);
+import_loop(Host, From, To, Secret, Blobs, Stats, Context) ->
     progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
-    case get_thing(From, Host, Secret, Context) of
+    case get_thing(From, Host, Secret, Blobs, Context) of
         {ok, Thing} ->
             progress(io_lib:format("~w: importing", [From]), Context),
-            Stats1 = import_thing(Host, From, Thing, Stats, Context),
+            Stats1 = import_thing(Host, From, Thing, Blobs, Stats, Context),
             Stats2 = Stats1#stats{
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
             },
-            import_loop(Host, From+1, To, Secret, Stats2, Context);
+            import_loop(Host, From+1, To, Secret, Blobs, Stats2, Context);
         {error, no_service} ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [From]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_loop(Host, From, To, Secret, Stats, Context);
+            import_loop(Host, From, To, Secret, Blobs, Stats, Context);
         {error, timeout} ->
             progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [From]), Context),
             timer:sleep(5000),
-            import_loop(Host, From, To, Secret, Stats, Context);
+            import_loop(Host, From, To, Secret, Blobs, Stats, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping to next", [From]), Context),
             Stats1 = Stats#stats{
@@ -380,25 +388,25 @@ import_loop(Host, From, To, Secret, Stats, Context) ->
                 consequetive_notfound=Stats#stats.consequetive_notfound+1,
                 error=[{From, notfound} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Secret, Stats1, Context);
+            import_loop(Host, From+1, To, Secret, Blobs, Stats1, Context);
         {error, Reason} ->
             progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
             Stats1 = Stats#stats{
                 error=[{From, Reason} | Stats#stats.error]
             },
-            import_loop(Host, From+1, To, Secret, Stats1, Context)
+            import_loop(Host, From+1, To, Secret, Blobs, Stats1, Context)
     end.
 
 
-    handle_delayed([], _Host, _Secret, #stats{delayed=[]} = Stats, _Context) ->
+    handle_delayed([], _Host, _Secret, _Blobs, #stats{delayed=[]} = Stats, _Context) ->
         {ok, Stats};
-    handle_delayed([], Host, Secret, #stats{delayed=Delayed} = Stats, Context) ->
-        handle_delayed(Delayed, Host, Secret, Stats#stats{delayed=[]}, Context);
-    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Secret, Stats, Context) ->
+    handle_delayed([], Host, Secret, Blobs, #stats{delayed=Delayed} = Stats, Context) ->
+        handle_delayed(Delayed, Host, Secret, Blobs, Stats#stats{delayed=[]}, Context);
+    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, Secret, Blobs, Stats, Context) ->
         AnyId = z_convert:to_integer(AnymetaId),
         FoundId = case find_any_id(AnyId, Host, Context) of
                     undefined ->
-                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Secret, Stats, Context),
+                        {ok, Stats1} = import_loop(Host, AnyId, AnyId, Secret, Blobs, Stats, Context),
                         find_any_id(AnyId, Host, Context);
                     FndId ->
                         Stats1 = Stats,
@@ -411,10 +419,18 @@ import_loop(Host, From, To, Secret, Stats, Context) ->
             undefined ->
                 progress(io_lib:format("~w: not imported, skipping as keyword of ~w", [AnyId, RscId]), Context)
         end,
-        handle_delayed(Ds, Host, Secret, Stats1, Context).
+        handle_delayed(Ds, Host, Secret, Blobs, Stats1, Context).
 
 
-import_thing(Host, AnymetaId, Thing, Stats, Context) ->
+import_thing(Host, AnymetaId, Thing, blobsonly, Stats, Context) ->
+    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
+    case check_previous_import(Host, RscUri, Context) of
+        {ok, RscId} ->
+            maybe_import_file(AnymetaId, RscId, Thing, Stats, Context);
+        _ ->
+            Stats
+    end;
+import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
     case skip(Thing) of
         false ->
@@ -472,38 +488,9 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(Host, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
                     Stats4 = import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context),
-
-                    case proplists:get_value(<<"file">>, Thing) of
-                        undefined ->
-                            Stats4;
-                        {struct, File} -> 
-                            Filename = proplists:get_value(<<"original_file">>, File),
-                            case proplists:get_value(<<"file_blob">>, File) of
-                                undefined ->
-                                    case proplists:get_value(<<"uri">>, File) of
-                                        undefined ->
-                                            Stats4;
-                                        _ ->
-                                            case proplists:get_value(<<"mime">>, File) of
-                                                <<"application/x-youtube">> ->
-                                                    Stats4;
-                                                _ ->
-                                                    Url = proplists:get_value(<<"uri">>, File),
-                                                    m_media:replace_url(Url, RscId, [], Context),
-                                                    Stats4
-                                            end
-                                    end;
-                                {struct, Fileblob} -> 
-                                    {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
-                                    case proplists:get_value(<<"encode">>, Fileblob) of
-                                        <<"base64">> ->
-                                            Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
-                                            erlang:garbage_collect(),
-                                            write_file(AnymetaId, RscId, Filename, Data, Stats4, Context);
-                                        Encoding ->
-                                            Stats4#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats4#stats.error]}
-                                    end
-                            end
+                    case Blobs of
+                        no -> Stats;
+                        yes -> maybe_import_file(AnymetaId, RscId, Thing, Stats4, Context)
                     end;
                 {error, Stats1} ->
                     Stats1
@@ -512,6 +499,40 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             % Access was denied, skip this thing
             Stats#stats{error=[{AnymetaId, skipped} | Stats#stats.error]}
     end.
+
+    maybe_import_file(AnymetaId, RscId, Thing, Stats, Context) ->
+        case proplists:get_value(<<"file">>, Thing) of
+            undefined ->
+                Stats;
+            {struct, File} -> 
+                Filename = proplists:get_value(<<"original_file">>, File),
+                case proplists:get_value(<<"file_blob">>, File) of
+                    undefined ->
+                        case proplists:get_value(<<"uri">>, File) of
+                            undefined ->
+                                Stats;
+                            _ ->
+                                case proplists:get_value(<<"mime">>, File) of
+                                    <<"application/x-youtube">> ->
+                                        Stats;
+                                    _ ->
+                                        Url = proplists:get_value(<<"uri">>, File),
+                                        m_media:replace_url(Url, RscId, [], Context),
+                                        Stats
+                                end
+                        end;
+                    {struct, Fileblob} -> 
+                        {struct, Fileblob} = proplists:get_value(<<"file_blob">>, File),
+                        case proplists:get_value(<<"encode">>, Fileblob) of
+                            <<"base64">> ->
+                                Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
+                                erlang:garbage_collect(),
+                                write_file(AnymetaId, RscId, Filename, Data, Stats, Context);
+                            Encoding ->
+                                Stats#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats#stats.error]}
+                        end
+                end
+        end.
 
     skip(Thing) ->
         case proplists:get_value(<<"lang">>, Thing) of
