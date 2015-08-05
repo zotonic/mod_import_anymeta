@@ -1,8 +1,8 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2011-2013 Marc Worrell
+%% @copyright 2011-2015 Marc Worrell
 %% @doc Import data from an Anymeta website
 
-%% Copyright 2011-2013 Marc Worrell
+%% Copyright 2011-2015 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -85,21 +85,6 @@ init(Context) ->
             ", Context),
             [] = z_db:q("
                 create index import_anymeta_rsc_id on import_anymeta(rsc_id)
-            ", Context),
-            ok
-    end,
-    
-    case z_db:table_exists(anymeta_redirects, Context) of
-        true ->
-            ok;
-        false ->
-            [] = z_db:q("
-                create table anymeta_redirects (
-                    redirect_uri character varying(255) not null,
-                    rsc_id int not null,
-                    rsc_uri character varying(255) not null,
-                    host character varying(255)
-                )
             ", Context),
             ok
     end.
@@ -435,8 +420,6 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-            {struct, Text} = proplists:get_value(<<"text">>, Thing),
-            RedirectUri = proplists:get_value(<<"redirect_uri">>, Text),
             Authoritative = proplists:get_value(<<"authoritative">>, Thing),
             Rights = proplists:get_value(<<"rights">>, Thing),
             Findable = proplists:get_value(<<"findable">>, Thing),
@@ -457,12 +440,13 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                         {is_authoritative, Authoritative},
                         {rights, Rights},
                         {findable, Findable},
-                        {matchable, Matchable}
+                        {matchable, Matchable},
+                        {alternative_uris, proplists:get_value(<<"alt_uri">>, Thing)}
                         |OtherFields
                      ]
                      ++ fetch_content_group(Thing, Host, Context)
                      ++ fetch_media(Thing)
-                     ++ fetch_address(Thing)
+                     ++ maybe_set_redirect_uri(Thing, fetch_address(Thing))
                      ++ fetch_name(Thing)
                      ++ Texts3,
 
@@ -482,7 +466,7 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
             Fields3 = fix_rsc_name(Fields2),
             FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields3, Context),
             
-            case write_rsc(Host, AnymetaId, RedirectUri, FieldsFinal, Stats, Context) of
+            case write_rsc(Host, AnymetaId, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     % Import all edges
                     Stats2 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
@@ -514,9 +498,10 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
                                     case proplists:get_value(<<"encode">>, Fileblob) of
                                         <<"base64">> ->
                                             Data = base64:decode(proplists:get_value(<<"data">>, Fileblob)),
+                                            erlang:garbage_collect(),
                                             write_file(AnymetaId, RscId, Filename, Data, Stats4, Context);
                                         Encoding ->
-                                        Stats4#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats4#stats.error]}
+                                            Stats4#stats{error=[{AnymetaId, {unknown_file_encoding, Encoding}} | Stats4#stats.error]}
                                     end
                             end
                     end;
@@ -626,6 +611,21 @@ import_thing(Host, AnymetaId, Thing, Stats, Context) ->
         adr_part({<<"country">>, V}, Acc) -> [{address_country, V}|Acc];
         adr_part({<<"website">>, V}, Acc) -> [{website, V}|Acc];
         adr_part(_, Acc) -> Acc.
+
+    maybe_set_redirect_uri(Thing, Props) ->
+        {struct, Text} = proplists:get_value(<<"text">>, Thing),
+        case proplists:get_value(<<"redirect_uri">>, Text) of
+            null -> Props;
+            <<>> -> Props;
+            undefined -> Props;
+            RedirectUri ->
+                [
+                    {website, RedirectUri},
+                    {is_website_redirect, true}
+                    | proplists:delete(website, Props)
+                ]
+        end.
+
 
     fetch_name(Thing) ->
         case proplists:get_value(<<"name">>, Thing) of
@@ -940,45 +940,41 @@ map_language(<<"jp">>) -> <<"ja">>;
 map_language(Code) -> Code.
 
 
-write_rsc(Host, AnymetaId, RedirectUri, Fields, Stats, Context) ->
+write_rsc(Host, AnymetaId, Fields, Stats, Context) ->
     RscUri = proplists:get_value(anymeta_rsc_uri, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
     case check_previous_import(Host, RscUri, Context) of
         {ok, RscId} ->
-            case m_rsc:get(proplists:get_value(name, Fields), Context) of
-              undefined ->
-                Fields1 = Fields;
-              _FoundRsc ->
-                Fields1 = proplists:delete(name, Fields)
-            end,
+            Fields1 = case m_rsc:get(proplists:get_value(name, Fields), Context) of
+                          undefined -> Fields;
+                          _FoundRsc -> proplists:delete(name, Fields)
+                       end,
             progress(io_lib:format("~w: updating (zotonic id: ~w)", [AnymetaId, RscId]), Context),
-            {ok, RscId} = m_rsc_update:update(RscId, Fields1, [{escape_texts, false}, is_import], Context),
+            {ok, RscId} = rsc_update(RscId, Fields1, Context),
             register_import_update(Host, RscId, AnymetaId, RscUri, Context),
-            register_redirect(RedirectUri, RscUri, RscId, Host, Context),
             {ok, RscId, Stats};
         none -> 
             Name = proplists:get_value(name, Fields),
             case check_existing_rsc(Fields, Context) of
                 {ok, RscId} ->
                     progress(io_lib:format("~w: exists, updating (name: ~p, zotonic id: ~w)", [AnymetaId, Name, RscId]), Context),
-                    {ok, RscId} = m_rsc_update:update(RscId, Fields, [{escape_texts, false}, is_import], Context);
+                    {ok, RscId} = rsc_update(RscId, Fields, Context);
                 numeric ->
                     Fields1 = proplists:delete(name, Fields),
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
-                    {ok, RscId} = m_rsc_update:insert(Fields1, [{escape_texts, false}, is_import], Context);
+                    {ok, RscId} = rsc_insert(Fields1, Context);
                 clash ->
                     Name = proplists:get_value(name, Fields),
                     Fields1 = proplists:delete(name, Fields),
                     NewName = integer_to_list(AnymetaId)++"_"++z_convert:to_list(Name),
                     Fields2 = [{name,NewName}|Fields1],
                     progress(io_lib:format("~w: NAME CLASH, renamed ~p to ~p", [AnymetaId, Name, NewName]), Context),
-                    {ok, RscId} = m_rsc_update:insert(Fields2, [{escape_texts, false}, is_import], Context);
+                    {ok, RscId} = rsc_insert(Fields2, Context);
                 none ->
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
-                    {ok, RscId} = m_rsc_update:insert(Fields, [{escape_texts, false}, is_import], Context)
+                    {ok, RscId} = rsc_insert(Fields, Context)
             end,
             register_import(Host, RscId, AnymetaId, RscUri, Context),
-            register_redirect(RedirectUri, RscUri, RscId, Host, Context),
             {ok, RscId, Stats}
     end.
 
@@ -1044,19 +1040,6 @@ write_rsc(Host, AnymetaId, RedirectUri, Fields, Stats, Context) ->
                [AnymetaId, Host, RscUri],
                Context).
 
-    register_redirect(RedirectUri, RscUri, RscId, Host, Context) ->
-        case RedirectUri of
-          undefined ->
-            false;
-          <<>> ->
-            false;
-          _ ->
-            z_db:q("insert into anymeta_redirects (redirect_uri, rsc_uri, rsc_id, host)
-                    values ($1, $2, $3, $4)",
-                   [RedirectUri, RscUri, RscId, Host],
-                   Context)
-        end.
-
     check_existing_rsc(Fields, Context) ->
         case proplists:get_value(name, Fields) of
             undefined ->
@@ -1099,6 +1082,30 @@ write_rsc(Host, AnymetaId, RedirectUri, Fields, Stats, Context) ->
                 RscId
         end.
 
+
+rsc_update(RscId, Props, Context) ->
+    Options = [{escape_texts, false}, is_import],
+    try
+        m_rsc_update:update(RscId, Props, Options, Context)
+    catch
+        throw:{error, invalid_query} ->
+            lager:warning("[~p] Anymeta importer: Rescource ~p has invalid query ~p, dropping query.",
+                          [z_context:site(Context), RscId, proplists:lookup('query', Props)]),
+            Props1 = proplists:delete('query', Props),
+            m_rsc_update:update(RscId, Props1, Options, Context)
+    end.
+
+rsc_insert(Props, Context) ->
+    Options = [{escape_texts, false}, is_import],
+    try
+        m_rsc_update:insert(Props, Options, Context)
+    catch
+        throw:{error, invalid_query} ->
+            lager:warning("[~p] Anymeta importer: Rescource has invalid query ~p, dropping query.",
+                          [z_context:site(Context), proplists:lookup('query', Props)]),
+            Props1 = proplists:delete('query', Props),
+            m_rsc_update:insert(Props1, Options, Context)
+    end.
 
 % TODO: check if the file is changed, only import when it is changed.
 write_file(AnymetaId, RscId, Filename, Data, Stats, Context) ->
