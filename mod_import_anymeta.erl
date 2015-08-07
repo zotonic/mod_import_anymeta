@@ -103,13 +103,13 @@ observe_admin_menu(admin_menu, Acc, Context) -> [
 %% @doc Map anyMeta URLs to Zotonic resources, uses a permanent redirect
 observe_dispatch(#dispatch{path=Path}, Context) ->
     % URIs matched: 
+    % index.php
+    % /id/lang/slug
+    % (...)/id.php/(uuid|id|name)
     % (...)/(article|artefact|...)-<id>-<language>.html
     % (...)/(article|artefact|...)-<id>.html
-    % (...)/id.php/(uuid|id|name)
-    % index.php
     
-    % TODO match anymeta 4.19 paths /id/lang/slug
-    %      Handle multiple old domains to 1 zotonic site
+    % TODO Handle multiple old domains to 1 zotonic site
     
     Parts = string:tokens(Path, "/"),
     case lists:reverse(Parts) of
@@ -118,29 +118,40 @@ observe_dispatch(#dispatch{path=Path}, Context) ->
             redirect_rsc(m_rsc:rid(page_home, ContextQs), z_context:get_q("lang", ContextQs), ContextQs);
         [AnyId,"id.php"|_] ->
             redirect(AnyId, undefined, Context);
-        [Rsc|_] ->
-            case filename:extension(Rsc) of
-                ".html" ->
-                    case string:tokens(filename:rootname(Rsc), "-") of
-                        [_Kind,AnyId,[_,_] = Lang] ->
-                            redirect(AnyId, Lang, Context);
-                        [_Kind,AnyId] ->
-                            redirect(AnyId, undefined, Context);
-                        _ ->
-                            undefined
-                    end;
-                _ ->
-                    undefined
+        [Slug, [_,_] = Lang, [C|_] = AnyId] when C >= $0; C =< $9 ->
+            case z_utils:only_digits(AnyId) of
+                true -> redirect(AnyId, Lang, Context);
+                false -> old_anymeta_url(Slug, Context)
             end;
+        [Rsc|_] ->
+            old_anymeta_url(Rsc, Context);
         [] ->
             undefined
     end.
 
+    old_anymeta_url(Rsc, Context) ->
+        case filename:extension(Rsc) of
+            ".html" ->
+                case string:tokens(filename:rootname(Rsc), "-") of
+                    [_Kind,AnyId,[_,_] = Lang] ->
+                        redirect(AnyId, Lang, Context);
+                    [_Kind,AnyId] ->
+                        redirect(AnyId, undefined, Context);
+                    _ ->
+                        undefined
+                end;
+            _ ->
+                undefined
+        end.
+
     redirect(AnyId, Lang, Context) ->
-        case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", [z_convert:to_integer(AnyId)], Context) of
+        case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", 
+                     [z_convert:to_integer(AnyId)], 
+                     Context)
+        of
             undefined -> 
                 undefined;
-            {ok, RscId} ->
+            RscId when is_integer(RscId) ->
                 redirect_rsc(RscId, Lang, Context)
         end.
 
