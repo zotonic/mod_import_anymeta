@@ -446,8 +446,6 @@ import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
     case skip(Thing) of
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
-            RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-            Authoritative = proplists:get_value(<<"authoritative">>, Thing),
             Rights = proplists:get_value(<<"rights">>, Thing),
             Findable = proplists:get_value(<<"findable">>, Thing),
             Matchable = proplists:get_value(<<"matchable">>, Thing),
@@ -461,16 +459,16 @@ import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
             Fields0 = [
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
-                        {anymeta_rsc_uri, RscUri},
+                        {anymeta_rsc_uri, proplists:get_value(<<"resource_uri">>, Thing)},
                         {anymeta_host, Host},
                         {language, Langs},
-                        {is_authoritative, Authoritative},
                         {rights, Rights},
                         {findable, Findable},
                         {matchable, Matchable},
                         {alternative_uris, proplists:get_value(<<"alt_uri">>, Thing)}
                         |OtherFields
                      ]
+                     ++ fetch_authoritative(Thing)
                      ++ fetch_content_group(Thing, Host, Context)
                      ++ fetch_media(Thing)
                      ++ maybe_set_redirect_uri(Thing, fetch_address(Thing))
@@ -569,7 +567,21 @@ import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
                         end
                 end
         end.
-        
+
+    fetch_authoritative(Thing) ->
+        case z_conver:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)) of
+            true ->
+                [
+                    {is_authoritative, true},
+                    {uri, undefined}
+                ];
+            false ->
+                [
+                    {is_authoritative, false},
+                    {uri, proplists:get_value(<<"resource_uri">>, Thing)}
+                ]
+        end.
+
     fetch_website(undefined) -> 
         undefined;
     fetch_website({trans, Tr}) ->
