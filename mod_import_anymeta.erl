@@ -1,6 +1,7 @@
 %% @author Marc Worrell <marc@worrell.nl>
 %% @copyright 2011-2015 Marc Worrell
-%% @doc Import data from an Anymeta website
+%% @doc Import data from an Anymeta website. Check mod_import_anymeta_dispatch for
+%% redirecting old Anymeta urls to the new imported locations.
 
 %% Copyright 2011-2015 Marc Worrell
 %%
@@ -27,13 +28,13 @@
 
 -mod_title("Import Anymeta Site").
 -mod_description("Import data from an Anymeta web site.").
+-mod_depends([mod_import_anymeta_dispatch]).
 -mod_prio(300).
 
 -export([
     init/1,
 
     observe_admin_menu/3,
-    observe_dispatch/2,
     event/2,
     
     find_any_id/3,
@@ -99,84 +100,6 @@ observe_admin_menu(admin_menu, Acc, Context) -> [
 
      |Acc].
 
-
-%% @doc Map anyMeta URLs to Zotonic resources, uses a permanent redirect
-observe_dispatch(#dispatch{path=Path}, Context) ->
-    % URIs matched: 
-    % index.php
-    % /id/lang/slug
-    % (...)/id.php/(uuid|id|name)
-    % (...)/(article|artefact|...)-<id>-<language>.html
-    % (...)/(article|artefact|...)-<id>.html
-    
-    % TODO Handle multiple old domains to 1 zotonic site
-    
-    Parts = string:tokens(Path, "/"),
-    case lists:reverse(Parts) of
-        ["index.php"] ->
-            ContextQs = z_context:ensure_qs(Context),
-            redirect_rsc(m_rsc:rid(page_home, ContextQs), z_context:get_q("lang", ContextQs), ContextQs);
-        [AnyId,"id.php"|_] ->
-            redirect(AnyId, undefined, Context);
-        [Slug, [_,_] = Lang, [C|_] = AnyId] when C >= $0; C =< $9 ->
-            case z_utils:only_digits(AnyId) of
-                true -> redirect(AnyId, Lang, Context);
-                false -> old_anymeta_url(Slug, Context)
-            end;
-        [Rsc|_] ->
-            old_anymeta_url(Rsc, Context);
-        [] ->
-            undefined
-    end.
-
-    old_anymeta_url(Rsc, Context) ->
-        case filename:extension(Rsc) of
-            ".html" ->
-                case string:tokens(filename:rootname(Rsc), "-") of
-                    [_Kind,AnyId,[_,_] = Lang] ->
-                        redirect(AnyId, Lang, Context);
-                    [_Kind,AnyId] ->
-                        redirect(AnyId, undefined, Context);
-                    _ ->
-                        undefined
-                end;
-            _ ->
-                undefined
-        end.
-
-    redirect(AnyId, Lang, Context) ->
-        case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1", 
-                     [z_convert:to_integer(AnyId)], 
-                     Context)
-        of
-            undefined -> 
-                undefined;
-            RscId when is_integer(RscId) ->
-                redirect_rsc(RscId, Lang, Context)
-        end.
-
-    redirect_rsc(undefined, _Lang, _Context) ->
-        undefined;
-    redirect_rsc(RscId, Lang, Context) ->
-        Lang1 = map_language(Lang),
-        Context1 = case z_trans:is_language(Lang1) of
-                     true ->
-                         % Add language
-                         z_context:set_language(list_to_atom(Lang1), Context);
-                     false ->
-                         % Ignore language
-                         Context
-                   end,
-        case m_rsc:p(RscId, page_url, Context1) of
-            undefined ->
-                undefined;
-            URL ->
-                {ok, #dispatch_match{
-                    mod=controller_redirect,
-                    mod_opts=[{url, URL}, {is_permanent, true}],
-                    bindings=[]
-                }}
-        end.
 
 event(#submit{message=find_imported}, Context) ->
     AnymetaId = z_convert:to_integer(z_string:trim(z_context:get_q_validated("imported_id", Context))),
