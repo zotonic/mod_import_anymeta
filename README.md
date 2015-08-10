@@ -38,6 +38,12 @@ The import module overrules and adds some extra templates to the admin:
  * An extra sidebar template with information about the conversion and a link to the page on the original anyMeta site
 
 
+Old URLs and references to the previous site
+--------------------------------------------
+
+After importing a site, you can enable `mod_import_anymeta_dispatc` (https://github.com/zotonic/mod_import_anymeta_dispatch). The dispatch module adds a dispatch handler to map old Anymeta specific URLs to the newly imported resources.
+
+
 Limitations
 -----------
 
