@@ -492,7 +492,7 @@ import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
         end.
 
     fetch_authoritative(Thing) ->
-        case z_conver:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)) of
+        case z_convert:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)) of
             true ->
                 [
                     {is_authoritative, true},
