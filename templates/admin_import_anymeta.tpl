@@ -90,39 +90,40 @@
                 </div>
 
                 <div class="form-group row">
-                    <label class="control-label col-md-3" for="sysadmin-pw">{_ Import blobs _}</label>
+                    <label class="control-label col-md-3" for="sysadmin-pw">{_ Import _}</label>
                     <div class="col-md-4">
                         <select class="form-control" name="blobs" id="import-blobs">
                             <option value="y">{_ Things with their blobs _}</option>
                             <option value="n">{_ Things only, don’t download blobs _}</option>
                             <option value="b">{_ Blobs only, don’t update imported things _}</option>
+                            <option value="e">{_ Edges only, don’t update imported things and blobs _}</option>
                         </select>
                     </div>
                 </div>
-		        
-		    <div style="display:none" class="alert alert-danger" id="import-error">
-		        {_ Could not start import, unexpected result from remote server. _}
-		    </div>
-		    
-            <div class="form-group row">
-		        <div class="col-md-9 col-md-offset-3">
-                    <button class="btn btn-primary" type="submit">{_ Start Import _}</button>
-                </div>
-		    </div>
-		</div>
-	</div>
-</form>
 
-<div class="widget">
-    <h3 class="widget-header">{_ Messages from the import _}</h3>
-    <div class="widget-content">
-        <p>{_ Progress messages from running imports are shown here. _}</p>
-        <pre id="progress"></pre>
+    		    <div style="display:none" class="alert alert-danger" id="import-error">
+    		        {_ Could not start import, unexpected result from remote server. _}
+    		    </div>
+    		    
+                <div class="form-group row">
+    		        <div class="col-md-9 col-md-offset-3">
+                        <button class="btn btn-primary" type="submit">{_ Start Import _}</button>
+                    </div>
+    		    </div>
+    		</div>
+    	</div>
+    </form>
+
+    <div class="widget">
+        <h3 class="widget-header">{_ Messages from the import _}</h3>
+        <div class="widget-content">
+            <p>{_ Progress messages from running imports are shown here. _}</p>
+            <pre id="progress"></pre>
+        </div>
     </div>
-</div>
 
-{% wire action={connect signal={import_anymeta_progress}} %}
+    {% wire action={connect signal={import_anymeta_progress}} %}
 
-{% wire action={focus target="host"} %}
+    {% wire action={focus target="host"} %}
 
 {% endblock %}

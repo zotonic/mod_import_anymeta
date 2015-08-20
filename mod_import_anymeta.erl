@@ -121,7 +121,8 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             From     = z_convert:to_integer(z_context:get_q_validated("start-id", Context)),
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
-            Blobs    = case z_convert:to_list(z_context:get_q("blobs", Context)) of
+            Blobs = case z_convert:to_list(z_context:get_q("blobs", Context)) of
+                            "e" -> edgesonly;
                             "n" -> no;
                             "y" -> yes;
                             "b" -> blobsonly
@@ -239,8 +240,10 @@ do_import(Host, From, To, Secret, Blobs, Context) ->
 get_url(Id, Host, Secret, Blobs) ->
     "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret++blobs_arg(Blobs).
 
+blobs_arg(edgesonly) -> "&skip-blob=1";
 blobs_arg(no) -> "&skip-blob=1";
-blobs_arg(_) -> "".
+blobs_arg(yes) -> "";
+blobs_arg(blobsonly) -> "".
 
 get_thing(Id, Hostname, Secret, Blobs, Context) ->
     Url = get_url(Id, Hostname, Secret, Blobs),
@@ -356,6 +359,14 @@ import_loop(Host, From, To, Secret, Blobs, Stats, Context) ->
         handle_delayed(Ds, Host, Secret, Blobs, Stats1, Context).
 
 
+import_thing(Host, _AnymetaId, Thing, edgesonly, Stats, Context) ->
+    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
+    case check_previous_import(Host, RscUri, Context) of
+        {ok, RscId} ->
+            import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context);
+        _ ->
+            Stats
+    end;
 import_thing(Host, AnymetaId, Thing, blobsonly, Stats, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
     case check_previous_import(Host, RscUri, Context) of
@@ -364,7 +375,7 @@ import_thing(Host, AnymetaId, Thing, blobsonly, Stats, Context) ->
         _ ->
             Stats
     end;
-import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) ->
+import_thing(Host, AnymetaId, Thing, Blobs, Stats, Context) when Blobs =:= no; Blobs =:= yes ->
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
     case skip(Thing) of
         false ->
