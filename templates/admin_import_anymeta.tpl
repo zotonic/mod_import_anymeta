@@ -97,6 +97,7 @@
                             <option value="n">{_ Things only, don’t download blobs _}</option>
                             <option value="b">{_ Blobs only, don’t update imported things _}</option>
                             <option value="e">{_ Edges only, don’t update imported things and blobs _}</option>
+                            <option value="t">{_ Tags and keywords only, don’t update imported things and blobs _}</option>
                         </select>
                     </div>
                 </div>

@@ -123,6 +123,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             Host     = z_string:trim(z_context:get_q("host", Context)),
             Blobs = case z_convert:to_list(z_context:get_q("blobs", Context)) of
                             "e" -> edgesonly;
+                            "t" -> tagsonly;
                             "n" -> no;
                             "y" -> yes;
                             "b" -> blobsonly
@@ -241,6 +242,7 @@ get_url(Id, Host, Secret, Blobs) ->
     "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret++blobs_arg(Blobs).
 
 blobs_arg(edgesonly) -> "&skip-blob=1";
+blobs_arg(tagsonly) -> "&skip-blob=1";
 blobs_arg(no) -> "&skip-blob=1";
 blobs_arg(yes) -> "";
 blobs_arg(blobsonly) -> "".
@@ -359,11 +361,22 @@ import_loop(Host, From, To, Secret, Blobs, Stats, Context) ->
         handle_delayed(Ds, Host, Secret, Blobs, Stats1, Context).
 
 
+import_thing(Host, _AnymetaId, Thing, tagsonly, Stats, Context) ->
+    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
+    case check_previous_import(Host, RscUri, Context) of
+        {ok, RscId} ->
+            Stats1 = import_keywords(Host, RscId, proplists:get_value(<<"keyword">>, Thing), Stats, Context),
+            import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats1, Context);
+        _ ->
+            Stats
+    end;
 import_thing(Host, _AnymetaId, Thing, edgesonly, Stats, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
     case check_previous_import(Host, RscUri, Context) of
         {ok, RscId} ->
-            import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context);
+            Stats1 = import_edges(Host, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context),
+            Stats2 = import_keywords(Host, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
+            import_keywords(Host, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context);
         _ ->
             Stats
     end;
@@ -787,7 +800,7 @@ convert_category(Thing, Context) ->
     {struct, Types} = proplists:get_value(<<"type">>, Thing),
     TypesSymbolic = proplists:get_value(<<"symbolic">>, Types),
     case z_notifier:first({import_anymeta_kind_type, Kind, TypesSymbolic}, Context) of
-        undefined -> {category, map_kind_type(Kind, TypesSymbolic)};
+        undefined -> {category, map_kind_type(Kind, TypesSymbolic, Context)};
         {ok, Category} -> {category, Category} 
     end.
     
@@ -884,24 +897,28 @@ fix_html_summary(Props) ->
         end;
     is_non_p_html(_) -> false.
 
-map_kind_type(<<"ARTEFACT">>, _) -> artifact;
-map_kind_type(<<"ARTICLE">>, _) -> article;
-map_kind_type(<<"ATTACHMENT">>, _) -> media;
-map_kind_type(<<"INSTITUTION">>, _) -> organization;
-map_kind_type(<<"KEYWORD">>, _) -> keyword;
-map_kind_type(<<"LANGUAGE">>, _) -> language;
-map_kind_type(<<"LISTEDIT">>, _) -> 'query';
-map_kind_type(<<"LISTPUBLISH">>, _) -> 'query';
-map_kind_type(<<"LOCATION">>, _) -> location;
-map_kind_type(<<"NOTE">>, _) -> text;
-map_kind_type(<<"PERSON">>, _) -> person;
-map_kind_type(<<"ROLE">>, _) -> predicate;
-map_kind_type(<<"SET">>, _) -> collection;
-map_kind_type(<<"TAG">>, _) -> keyword;
-map_kind_type(<<"THEME">>, _) -> content_group;
-map_kind_type(<<"TOPIC">>, _) -> anymeta_topic;
-map_kind_type(<<"TYPE">>, _) -> anymeta_type;
-map_kind_type(_, _) -> other.
+map_kind_type(<<"ARTEFACT">>, _, _Context) -> artifact;
+map_kind_type(<<"ARTICLE">>, _, _Context) -> article;
+map_kind_type(<<"ATTACHMENT">>, _, _Context) -> media;
+map_kind_type(<<"INSTITUTION">>, _, _Context) -> organization;
+map_kind_type(<<"KEYWORD">>, _, _Context) -> keyword;
+map_kind_type(<<"LANGUAGE">>, _, _Context) -> language;
+map_kind_type(<<"LISTEDIT">>, _, _Context) -> 'query';
+map_kind_type(<<"LISTPUBLISH">>, _, _Context) -> 'query';
+map_kind_type(<<"LOCATION">>, _, _Context) -> location;
+map_kind_type(<<"NOTE">>, _, _Context) -> text;
+map_kind_type(<<"PERSON">>, _, _Context) -> person;
+map_kind_type(<<"ROLE">>, _, _Context) -> predicate;
+map_kind_type(<<"SET">>, _, _Context) -> collection;
+map_kind_type(<<"TAG">>, _, Context) -> 
+    case m_category:name_to_id(tag, Context) of
+        {ok, _} -> tag;
+        {error, _} -> keyword
+    end;
+map_kind_type(<<"THEME">>, _, _Context) -> content_group;
+map_kind_type(<<"TOPIC">>, _, _Context) -> anymeta_topic;
+map_kind_type(<<"TYPE">>, _, _Context) -> anymeta_type;
+map_kind_type(_, _, _Context) -> other.
 
 map_predicate(<<"SETMEMBER">>) -> haspart;
 map_predicate(<<"FIGURE">>) -> depiction;
@@ -1165,7 +1182,7 @@ import_keywords(_Host, _RscId, null, Stats, _Context) ->
     Stats;
 import_keywords(Host, RscId, KeywordIds, Stats, Context) when is_list(KeywordIds) ->
     lists:foldl(fun(KwId, St) ->
-                    import_keyword(Host, RscId, KwId, St, Context)
+                    import_keyword(Host, RscId, maybe_integer(KwId), St, Context)
                 end,
                 Stats,
                 KeywordIds).
@@ -1182,6 +1199,11 @@ import_keywords(Host, RscId, KeywordIds, Stats, Context) when is_list(KeywordIds
         end.
     
 
+maybe_integer(Id) ->
+    case z_utils:only_digits(Id) of
+        true -> z_convert:to_integer(Id);
+        false -> Id
+    end.
 
 convert_query(Fields, Thing, Context) ->
     case proplists:get_value(<<"serialize">>, Thing) of
@@ -1222,7 +1244,7 @@ convert_query(Fields, Thing, Context) ->
                                         [],
                                         Types),
                     Cats1 = case Cats of 
-                                [] -> [ map_kind_type(K, []) || K <- Kinds ];
+                                [] -> [ map_kind_type(K, [], Context) || K <- Kinds ];
                                 _ -> Cats
                            end,
                     Fs = [
