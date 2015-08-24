@@ -46,20 +46,21 @@ cleanup_kw_tag(Host, Secret, Context0) ->
     end.
 
 cleanup_kw_tag_1(RscId, AnyId, Host, Secret, Context) ->
-    case mod_import_anymeta:get_thing(AnyId, Host, Secret, no, Context) of
-        {ok, Thing} ->
-            case proplists:get_value(<<"kind">>, Thing) of
-                <<"TAG">> ->
-                    case m_rsc:is_a(RscId, tag, Context) of
-                        true ->
-                            ok;
-                        false ->
-                            m_rsc_update:update(RscId, [{category,tag}], [no_touch], Context)
+    case m_rsc:is_a(RscId, tag, Context) of
+        true ->
+            ok;
+        false ->
+            case mod_import_anymeta:get_thing(AnyId, Host, Secret, no, Context) of
+                {ok, Thing} ->
+                    case proplists:get_value(<<"kind">>, Thing) of
+                        <<"TAG">> ->
+                            m_rsc_update:update(RscId, [{category,tag}], [no_touch], Context);
+                        _ ->
+                            ok
                     end;
-                _ ->
-                    ok
-            end;
-        {error, _} = Error ->
-            io:format("Error on fetching id ~p: ~p", [AnyId, Error]),
-            Error
+                {error, _} = Error ->
+                    io:format("Error on fetching id ~p: ~p", [AnyId, Error]),
+                    Error
+            end
     end.
+
