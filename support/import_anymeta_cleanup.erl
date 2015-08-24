@@ -60,7 +60,7 @@ cleanup_kw_tag_1(RscId, AnyId, Host, Secret, Context) ->
                     case proplists:get_value(<<"kind">>, Thing) of
                         <<"TAG">> ->
                             io:format("+"),
-                            m_rsc_update:update(RscId, [{category,tag}], [no_touch], Context);
+                            m_rsc_update:update(RscId, [{category,tag}], Context);
                         _ ->
                             io:format("."),
                             ok
