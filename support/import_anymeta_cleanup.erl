@@ -11,8 +11,12 @@ cleanup_tags(Context0) ->
         {ok, CatId} ->
             Ids = z_db:q("select id from rsc where category_id = $1", [CatId], Context),
             lists:foreach(fun({Id}) ->
-                              case z_db:q("select count(*) from edge where object_id = $1", [Id], Context) of
-                                [] ->
+                              case z_db:q1("select count(*) 
+                                            from edge 
+                                            where object_id = $1", 
+                                            [Id], Context) 
+                              of
+                                0 ->
                                     io:format("x"),
                                     m_rsc:delete(Id, Context);
                                 _ ->
