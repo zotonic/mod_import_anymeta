@@ -1271,11 +1271,11 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
     end.
 
 edge_props(Props) ->
-    lists:flatten(
+    lists:flatten([
             edge_prop_date_start(Props),
             edge_prop_date_end(Props),
             edge_prop_caption(Props)
-        ).
+        ]).
 
 edge_prop_date_start(Props) ->
     case proplists:get_value(<<"date_start">>, Props) of
