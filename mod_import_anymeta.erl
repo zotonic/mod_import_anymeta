@@ -90,6 +90,24 @@ init(Context) ->
                 create index import_anymeta_rsc_id on import_anymeta(rsc_id)
             ", Context),
             ok
+    end,
+    case z_db:table_exists(import_anymeta_edge, Context) of
+        true ->
+            ok;
+        false ->
+            [] = z_db:q("
+                create table import_anymeta_edge (
+                    id int not null,
+                    props bytea,
+                    
+                    constraint import_anymeta_edge_pkey primary key (id),
+                    constraint fk_import_anymeta_edge_id foreign key (id)
+                        references edge(id)
+                        on update cascade
+                        on delete cascade
+                )
+            ", Context),
+            ok
     end.
 
 
@@ -1238,7 +1256,69 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
                 OrderBin ->
                     z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
             end,
+            z_db:q("delete from anymeta_import_edge where id = $1",
+                   [EdgeId],
+                   Context),
+            case edge_props(Props) of
+                [] ->
+                    ok;
+                EPs ->
+                    z_db:q("insert into anymeta_import_edge (id,props) values ($1,$2)",
+                           [EdgeId, {raw, EPs}],
+                           Context)
+            end,
             Stats
+    end.
+
+edge_props(Props) ->
+    lists:flatten(
+            edge_prop_date_start(Props),
+            edge_prop_date_end(Props),
+            edge_prop_caption(Props)
+        ).
+
+edge_prop_date_start(Props) ->
+    case proplists:get_value(<<"date_start">>, Props) of
+        {struct, Ps} ->
+            {<<"date">>, Date} = proplists:lookup(<<"date">>, Ps),
+            [{date_start, convert_datetime(Date)}];
+        undefined ->
+            []
+    end.
+
+edge_prop_date_end(Props) ->
+    case proplists:get_value(<<"date_end">>, Props) of
+        {struct, Ps} ->
+            {<<"date">>, Date} = proplists:lookup(<<"date">>, Ps),
+            [{date_end, convert_datetime(Date)}];
+        undefined ->
+            []
+    end.
+
+edge_prop_caption(Props) ->
+    case proplists:get_value(<<"lang">>, Props) of
+        {struct, Ps} ->
+            Captions = [
+                begin
+                    Intro = proplists:get_value(<<"intro">>, Ls),
+                    {z_convert:to_atom(map_language(Lang)), Intro}
+                end
+                || {Lang, {struct, Ls}} <- Ps
+            ],
+            Captions1 = lists:filter(
+                            fun
+                                ({_, <<>>}) -> false;
+                                ({_, undefined}) -> false;
+                                ({_, null}) -> false;
+                                (_) -> true
+                            end,
+                            Captions),
+            case Captions1 of
+                [] -> [];
+                _ -> [{caption, {trans, Captions1}}]
+            end;
+        undefined ->
+            []
     end.
 
 
