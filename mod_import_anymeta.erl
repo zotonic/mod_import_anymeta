@@ -1256,14 +1256,14 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
                 OrderBin ->
                     z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
             end,
-            z_db:q("delete from anymeta_import_edge where id = $1",
+            z_db:q("delete from import_anymeta_edge where id = $1",
                    [EdgeId],
                    Context),
             case edge_props(Props) of
                 [] ->
                     ok;
                 EPs ->
-                    z_db:q("insert into anymeta_import_edge (id,props) values ($1,$2)",
+                    z_db:q("insert into import_anymeta_edge (id,props) values ($1,$2)",
                            [EdgeId, {raw, EPs}],
                            Context)
             end,
