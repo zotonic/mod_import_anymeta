@@ -1085,7 +1085,7 @@ write_rsc(_Host, HostOriginal, AnymetaId, Fields, Stats, Context) ->
     register_import(Host, RscId, undefined, RscUri, Context) ->
         % Used for stubs
         z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
-                values ($1, $2, $3, true, now())",
+                values ($1, $2, NULL, $3, true, now())",
                [RscUri, RscId, Host],
                Context);
     register_import(Host, RscId, AnymetaId, RscUri, Context) ->
