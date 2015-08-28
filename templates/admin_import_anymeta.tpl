@@ -69,7 +69,7 @@
                 <div class="form-group row">
                     <label class="control-label col-md-3" for="host">{_ Orginal Anymeta Hostname (without “http://”) _}</label>
                     <div class="col-md-9">
-                        <input type="text" id="host" name="host_original" value="{{ m.session.anymeta_host_original|force_escape|default:"orig.example.com"}}" class="col-lg-8 col-md-8 form-control" />
+                        <input type="text" id="host" name="host_original" value="{{ m.session.anymeta_host_original|force_escape }}" class="col-lg-8 col-md-8 form-control" />
                     </div>
                     <p style="display:none" class="notification error" id="import-nxdomain">{_ Set this if you are re-importing from a backup of the old site. _}</p>
                 </div>

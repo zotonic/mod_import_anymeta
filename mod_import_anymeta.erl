@@ -504,10 +504,11 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                         {anymeta_id, AnymetaId},
                         {anymeta_rsc_uri, proplists:get_value(<<"resource_uri">>, Thing)},
                         {anymeta_host, Host},
+                        {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
                         {rights, Rights},
-                        {findable, Findable},
-                        {matchable, Matchable},
+                        {is_findable, z_convert:to_bool(Findable)},
+                        {is_matchable, z_convert:to_bool(Matchable)},
                         {alternative_uris, proplists:get_value(<<"alt_uri">>, Thing)}
                         |OtherFields
                      ]
@@ -532,14 +533,16 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
             Fields1 = fix_html_summary(map_sections(Fields)),
             Fields2 = convert_query(Fields1, Thing, Context),
             Fields3 = fix_rsc_name(Fields2),
-            FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields3, Context),
-            
+            Fields4 = maybe_add_allday(Fields3, Context),
+            FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields4, Context),
+
             case write_rsc(Host, HostOriginal, AnymetaId, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     % Import all edges
                     Stats2 = import_edges(Host, HostOriginal, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
                     Stats3 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
                     Stats4 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context),
+                    maybe_add_identity(RscId, proplists:get_value(<<"auth">>, Thing), Context),
                     case Blobs of
                         no -> Stats;
                         yes -> maybe_import_file(AnymetaId, RscId, Thing, Stats4, Context)
@@ -551,6 +554,32 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
             % Access was denied, skip this thing
             Stats#stats{error=[{AnymetaId, skipped} | Stats#stats.error]}
     end.
+
+    maybe_add_allday(Fields, Context) ->
+        Cat = proplists:get_value(category, Fields),
+        case lists:member(person, m_category:is_a(Cat, Context)) of
+            true ->
+                [{date_is_all_day, true} | Fields];
+            false ->
+                Fields
+        end.
+
+    maybe_add_identity(1, _, _Context) ->
+        ok;
+    maybe_add_identity(RscId, {struct, Auth}, Context) ->
+        case m_identity:get_username(RscId, Context) of
+            undefined ->
+                case z_convert:to_bool(proplists:get_value(<<"enabled">>, Auth)) of
+                    true ->
+                        m_identity:set_username_pw(RscId, proplists:get_value(<<"email">>, Auth), z_ids:id(), Context);
+                    false ->
+                        ok
+                end;
+            _Username ->
+                ok
+        end;
+    maybe_add_identity(_RscId, undefined, _Context) ->
+        ok.
 
     maybe_import_file(AnymetaId, RscId, Thing, Stats, Context) ->
         case proplists:get_value(<<"file">>, Thing) of
@@ -729,6 +758,10 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
         nam_part({<<"suffix">>, V}, Acc) -> [{name_suffix, V}|Acc];
         nam_part({<<"prefix">>, V}, Acc) -> [{name_prefix, V}|Acc];
         nam_part({<<"gender">>, Gender}, Acc) -> [{gender, z_string:to_lower(Gender)}|Acc];
+        nam_part({<<"birth_city">>, V}, Acc) -> [{birth_city, V}|Acc];
+        nam_part({<<"birth_country">>, V}, Acc) -> [{birth_country, V}|Acc];
+        nam_part({<<"decease_city">>, V}, Acc) -> [{decease_city, V}|Acc];
+        nam_part({<<"decease_country">>, V}, Acc) -> [{decease_country, V}|Acc];
         nam_part(_, Acc) -> Acc.
 
 
@@ -769,13 +802,19 @@ map_texts(Lang, Ts) ->
         skip;
     map_text_field(<<"label">>, {struct, Ts}) -> 
         Sections = lists:foldr(fun({Name, {struct, T}}, Acc) ->
-                                    Acc1 = case proplists:get_value(<<"text">>, T) of
-                                        <<>> -> Acc;
-                                        Text -> [ {{block, 0-length(Acc), Name, text}, Text} | Acc]
-                                    end,
-                                    case proplists:get_value(<<"subhead">>, T) of
-                                        <<>> -> Acc1;
-                                        SubHead -> [ {{block, 0-length(Acc1), Name, header}, SubHead} | Acc1]
+                                    Name1 = z_string:to_lower(Name),
+                                    Text = get_non_empty_value(<<"text">>, T),
+                                    SubHead = get_non_empty_value(<<"subhead">>, T),
+                                    case {Text, SubHead} of
+                                        {undefined, undefined} ->
+                                            Acc;
+                                        {_, undefined} ->
+                                            [ {{block, 0-length(Acc), Name1, text}, Text} | Acc];
+                                        {undefined, _} ->
+                                            [ {{block, 0-length(Acc), Name1, header}, SubHead} | Acc];
+                                        {_, _} ->
+                                            Acc1 = [ {{block, 0-length(Acc), Name1, text}, Text} | Acc],
+                                            [ {{block, 0-length(Acc1), <<Name1/binary, "_header">>, header}, SubHead} | Acc1]
                                     end
                                end,
                                [],
@@ -785,6 +824,17 @@ map_texts(Lang, Ts) ->
 
     map_text_field(_Skipped, _) ->
         skip.
+
+get_non_empty_value(Key, Props) ->
+    case proplists:get_value(Key, Props) of
+        undefined -> undefined;
+        null -> undefined;
+        <<>> -> undefined;
+        {struct, []} -> undefined;
+        [] -> undefined;
+        Text -> Text
+    end.
+
 
 map_sections(Fs) ->
     case lists:partition(fun({{block, _, _, _}, _}) -> true; (_) -> false end, Fs) of
@@ -1256,16 +1306,25 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
                 OrderBin ->
                     z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
             end,
-            z_db:q("delete from import_anymeta_edge where id = $1",
-                   [EdgeId],
-                   Context),
             case edge_props(Props) of
                 [] ->
-                    ok;
+                    z_db:q("delete from import_anymeta_edge where id = $1",
+                           [EdgeId],
+                           Context);
                 EPs ->
-                    z_db:q("insert into import_anymeta_edge (id,props) values ($1,$2)",
-                           [EdgeId, {raw, EPs}],
-                           Context)
+                    case z_db:q("update import_anymeta_edge
+                                 set props = $1
+                                 where id = $2",
+                                [{raw, EPs},EdgeId],
+                                Context)
+                    of
+                        0 ->
+                            z_db:q("insert into import_anymeta_edge (id,props) values ($1,$2)",
+                                   [EdgeId, {raw, EPs}],
+                                   Context);
+                        1 ->
+                            ok
+                    end
             end,
             Stats
     end.
