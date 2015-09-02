@@ -1217,6 +1217,11 @@ rsc_update(RscId, Props, Context) ->
     try
         m_rsc_update:update(RscId, Props, Options, Context)
     catch
+        error:{error, {badmatch, {unknown_predicate, Pred}}} ->
+            lager:warning("[~p] Anymeta importer: Rescource ~p has invalid query ~p, unknown predicate ~p.",
+                          [z_context:site(Context), RscId, proplists:lookup('query', Props), Pred]),
+            Props1 = proplists:delete('query', Props),
+            m_rsc_update:update(RscId, Props1, Options, Context);
         throw:{error, invalid_query} ->
             lager:warning("[~p] Anymeta importer: Rescource ~p has invalid query ~p, dropping query.",
                           [z_context:site(Context), RscId, proplists:lookup('query', Props)]),
