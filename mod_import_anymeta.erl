@@ -1096,20 +1096,25 @@ write_rsc(_Host, HostOriginal, AnymetaId, Fields, Stats, Context) ->
             {ok, RscId, Stats};
         none -> 
             Name = proplists:get_value(name, Fields),
-            case check_existing_rsc(Name, Context) of
+            {ok, RscId} = case check_existing_rsc(Name, Context) of
                 numeric ->
                     Fields1 = proplists:delete(name, Fields),
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
-                    {ok, RscId} = rsc_insert(Fields1, Context);
+                    rsc_insert(Fields1, Context);
                 clash ->
                     Fields1 = proplists:delete(name, Fields),
                     NewName = integer_to_list(AnymetaId)++"_"++z_convert:to_list(Name),
-                    Fields2 = [{name,NewName}|Fields1],
                     progress(io_lib:format("~w: NAME CLASH, renamed ~p to ~p", [AnymetaId, Name, NewName]), Context),
-                    {ok, RscId} = rsc_insert(Fields2, Context);
+                    case m_rsc:rid(NewName, Context) of
+                        undefined ->
+                            Fields2 = [{name,NewName}|Fields1],
+                            rsc_insert(Fields2, Context);
+                        ExistingId ->
+                            {ok, ExistingId}
+                    end;
                 none ->
                     progress(io_lib:format("~w: Inserted", [AnymetaId]), Context),
-                    {ok, RscId} = rsc_insert(Fields, Context)
+                    rsc_insert(Fields, Context)
             end,
             register_import(HostOriginal, RscId, AnymetaId, RscUri, Context),
             {ok, RscId, Stats}
