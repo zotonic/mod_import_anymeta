@@ -50,6 +50,9 @@
 -include_lib("modules/mod_admin/include/admin_menu.hrl").
 -include("include/mod_import_anymeta.hrl").
 
+-define(RETRIES, 4).
+
+
 init(Context) ->
     ensure_anymeta_type(Context),
     case z_db:table_exists(import_anymeta, Context) of
@@ -199,6 +202,9 @@ find_any_id(AnyId, Host, Context) when is_integer(AnyId)->
 
 
 import_single(Host, HostOriginal, AnyId, Secret, Context) ->
+    import_single(Host, HostOriginal, AnyId, Secret, Context, 1).
+
+import_single(Host, HostOriginal, AnyId, Secret, Context, Retries) ->
     case get_thing(AnyId, Host, Secret, yes, Context) of
         {ok, Thing} ->
             progress(io_lib:format("~w: importing", [AnyId]), Context),
@@ -218,8 +224,15 @@ import_single(Host, HostOriginal, AnyId, Secret, Context) ->
             progress(io_lib:format("~w: not found, skipping to next", [AnyId]), Context),
             {error, not_found};
         {error, Reason} = Error ->
-            progress(io_lib:format("~w: error, skipping to next (error: ~p)", [AnyId, Reason]), Context),
-            Error
+            case Retries < ?RETRIES of
+                true ->
+                    progress(io_lib:format("~w: error, will retry in 1 second (error: ~p)", [AnyId, Reason]), Context),
+                    timer:sleep(1000),
+                    import_single(Host, HostOriginal, AnyId, Secret, Context, Retries+1);
+                false ->
+                    progress(io_lib:format("~w: error, skipping to next (error: ~p)", [AnyId, Reason]), Context),
+                    Error
+            end
     end.
 
 import_referring_edge(Host, HostOriginal, AnyId, ObjectId, Secret, Context) ->
@@ -396,6 +409,10 @@ import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context) when is
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
     handle_delayed(Stats#stats.delayed, Host, HostOriginal, Secret, Blobs, Stats#stats{delayed=[]}, Context);
 import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context) ->
+    import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, 1).
+
+
+import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, Retries) ->
     progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
     case get_thing(From, Host, Secret, Blobs, Context) of
         {ok, Thing} ->
@@ -425,11 +442,18 @@ import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context) ->
             },
             import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats1, Context);
         {error, Reason} ->
-            progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
-            Stats1 = Stats#stats{
-                error=[{From, Reason} | Stats#stats.error]
-            },
-            import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats1, Context)
+            case Retries < ?RETRIES of
+                true ->
+                    progress(io_lib:format("~w: error, will retry in 1 second (error: ~p)", [From, Reason]), Context),
+                    timer:sleep(1000),
+                    import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, Retries+1);
+                false ->
+                    progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
+                    Stats1 = Stats#stats{
+                        error=[{From, Reason} | Stats#stats.error]
+                    },
+                    import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats1, Context)
+            end
     end.
 
 
@@ -1321,7 +1345,7 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
                 OrderBin ->
                     z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
             end,
-            case edge_props(Props) of
+            case edge_props(Edge) of
                 [] ->
                     z_db:q("delete from import_anymeta_edge where id = $1",
                            [EdgeId],
@@ -1330,12 +1354,12 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
                     case z_db:q("update import_anymeta_edge
                                  set props = $1
                                  where id = $2",
-                                [{raw, EPs},EdgeId],
+                                [?DB_PROPS(EPs),EdgeId],
                                 Context)
                     of
                         0 ->
                             z_db:q("insert into import_anymeta_edge (id,props) values ($1,$2)",
-                                   [EdgeId, {raw, EPs}],
+                                   [EdgeId, ?DB_PROPS(EPs)],
                                    Context);
                         1 ->
                             ok
@@ -1356,6 +1380,8 @@ edge_prop_date_start(Props) ->
         {struct, Ps} ->
             {<<"date">>, Date} = proplists:lookup(<<"date">>, Ps),
             [{date_start, convert_datetime(Date)}];
+        Date when is_binary(Date) ->
+            [{date_start, convert_datetime(Date)}];
         undefined ->
             []
     end.
@@ -1364,6 +1390,8 @@ edge_prop_date_end(Props) ->
     case proplists:get_value(<<"date_end">>, Props) of
         {struct, Ps} ->
             {<<"date">>, Date} = proplists:lookup(<<"date">>, Ps),
+            [{date_end, convert_datetime(Date)}];
+        Date when is_binary(Date) ->
             [{date_end, convert_datetime(Date)}];
         undefined ->
             []
