@@ -28,7 +28,7 @@
                 <div class="form-group row">
                     <label class="control-label col-md-3" for="imported_host">{_ Hostname of Anymeta site (without “http://”) _}</label>
                     <div class="col-md-3">
-                        <input type="text" id="imported_uri" name="imported_host" value="" class="form-control" />
+                        <input type="text" id="imported_uri" name="imported_host" value="{{ m.import_anymeta.host|escape }}" class="form-control" />
                     </div>
                     <div class="col-md-6">
                         <button class="btn btn-primary" type="submit">{_ Find _}</button>
@@ -60,16 +60,15 @@
                 <div class="form-group row">
                     <label class="control-label col-md-3" for="host">{_ Hostname of Anymeta site (without “http://”) _}</label>
                     <div class="col-md-9">
-                        <input type="text" id="host" name="host" value="{{ m.session.anymeta_host|force_escape|default:"www.example.com"}}" class="col-lg-8 col-md-8 form-control" />
+                        <input type="text" id="host" name="host" value="{{ m.session.anymeta_host|default:m.import_anymeta.host|force_escape|default:"www.example.com"}}" class="col-lg-8 col-md-8 form-control" />
                     </div>
     			    <p style="display:none" class="notification error" id="import-nxdomain">{_ Could not start import, the hostname could not be found. _}</p>
                 </div>
 
-
                 <div class="form-group row">
                     <label class="control-label col-md-3" for="host">{_ Orginal Anymeta Hostname (without “http://”) _}</label>
                     <div class="col-md-9">
-                        <input type="text" id="host" name="host_original" value="{{ m.session.anymeta_host_original|force_escape }}" class="col-lg-8 col-md-8 form-control" />
+                        <input type="text" id="host" name="host_original" value="{{ m.session.anymeta_host_original|default:m.import_anymeta.host|force_escape }}" class="col-lg-8 col-md-8 form-control" />
                     </div>
                     <p style="display:none" class="notification error" id="import-nxdomain">{_ Set this if you are re-importing from a backup of the old site. _}</p>
                 </div>

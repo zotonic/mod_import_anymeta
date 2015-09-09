@@ -92,6 +92,9 @@ init(Context) ->
             [] = z_db:q("
                 create index import_anymeta_rsc_id on import_anymeta(rsc_id)
             ", Context),
+            [] = z_db:q("
+                create index import_anymeta_host_key on import_anymeta(host)
+            ", Context),
             ok
     end,
     case z_db:table_exists(import_anymeta_edge, Context) of
