@@ -7,3 +7,15 @@
     start_time = now(),
     delayed=[]
 }).
+
+-record(opt, {
+    host :: string(),
+    host_original :: string(),
+    from :: integer(),
+    to :: integer(),
+    blobs = yes :: edgesonly | tagsonly | no | yes | blobsonly,
+    is_only_authoritative = false :: boolean(),
+    content_group :: integer(),
+    secret :: string()
+}).
+

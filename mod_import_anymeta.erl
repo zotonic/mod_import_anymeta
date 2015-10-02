@@ -22,6 +22,9 @@
 %%       [ {name, "anytype_<name>"}, {title, "<<original title>>"} ]
 %%       Links all imported resources to the original anymeta types w/ predicate 'hasanytype'
 %%       This enables later correction of the imported data.
+%%
+%%       creator + created of edges
+%%       creator, modifier, created, modified of resources (when needed make stubs)
 
 -module(mod_import_anymeta).
 -author("Marc Worrell <marc@worrell.nl>").
@@ -38,12 +41,12 @@
     event/2,
     
     find_any_id/3,
-    do_import/7,
-    import_single/5,
-    import_referring_edge/6,
-    import_thing/7,
-    test_host/4,
-    get_thing/5
+    do_import/2,
+    import_single/2,
+    import_referring_edge/4,
+    import_thing/5,
+    test_host/2,
+    get_thing/3
 ]).
 
 -include_lib("zotonic.hrl").
@@ -148,6 +151,8 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             To       = z_convert:to_integer(z_context:get_q_validated("end-id", Context)),
             Host     = z_string:trim(z_context:get_q("host", Context)),
             HostOrg0 = z_string:trim(z_context:get_q("host_original", Context)),
+            CGId = z_convert:to_integer(z_context:get_q("content-group", Context)),
+            IsOnlyAuthoritative = z_convert:to_bool(z_context:get_q("only-authoritative", Context)),
             Blobs = case z_convert:to_list(z_context:get_q("blobs", Context)) of
                             "e" -> edgesonly;
                             "t" -> tagsonly;
@@ -165,7 +170,18 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             z_context:set_session(anymeta_host, Host, Context),
             z_context:set_session(anymeta_host_original, HostOriginal, Context),
             
-            case do_import(Host, HostOriginal, From, To, Secret, Blobs, Context) of
+            Opt = #opt{
+                host = Host,
+                host_original = HostOriginal,
+                from = From,
+                to = To,
+                blobs = Blobs,
+                is_only_authoritatve = IsOnlyAuthoritative,
+                content_group = CGId,
+                secret = Secret
+            },
+
+            case do_import(Opt, Context) of
                 ok ->
                     z_render:wire([{fade_in, [{target, "import-started"}]}, {hide, [{target, Form}]}], Context);
                 {error, nxdomain} ->
@@ -204,54 +220,57 @@ find_any_id(AnyId, Host, Context) when is_integer(AnyId)->
     end.
 
 
-import_single(Host, HostOriginal, AnyId, Secret, Context) ->
-    import_single(Host, HostOriginal, AnyId, Secret, Context, 1).
+import_single(Opt, Context) ->
+    import_single(Opt, Context, 1).
 
-import_single(Host, HostOriginal, AnyId, Secret, Context, Retries) ->
-    case get_thing(AnyId, Host, Secret, yes, Context) of
+import_single(#opt{from=AnyId} = Opt, Context, Retries) ->
+    case get_thing(Opt, AnyId, Context) of
         {ok, Thing} ->
             progress(io_lib:format("~w: importing", [AnyId]), Context),
-            _Stats1 = import_thing(Host, HostOriginal, AnyId, Thing, yes, #stats{}, Context),
+            _Stats1 = import_thing(Opt, AnyId, Thing, #stats{}, Context),
             {ok, Thing};
         {error, no_service} ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [AnyId]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_single(Host, HostOriginal, AnyId, Secret, Context);
+            import_single(Opt, Context);
         {error, timeout} ->
             progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [AnyId]), Context),
             timer:sleep(5000),
-            import_single(Host, HostOriginal, AnyId, Secret, Context);
+            import_single(Opt, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping to next", [AnyId]), Context),
             {error, not_found};
+        {error, Reason} = Error when Reason =:= gone; Reason =:= unauthorized ->
+            progress(io_lib:format("~w: error, skipping to next (error: ~p)", [AnyId, Reason]), Context),
+            Error;
         {error, Reason} = Error ->
             case Retries < ?RETRIES of
                 true ->
                     progress(io_lib:format("~w: error, will retry in 1 second (error: ~p)", [AnyId, Reason]), Context),
                     timer:sleep(1000),
-                    import_single(Host, HostOriginal, AnyId, Secret, Context, Retries+1);
+                    import_single(Opt, Context, Retries+1);
                 false ->
                     progress(io_lib:format("~w: error, skipping to next (error: ~p)", [AnyId, Reason]), Context),
                     Error
             end
     end.
 
-import_referring_edge(Host, HostOriginal, AnyId, ObjectId, Secret, Context) ->
-    case get_thing(AnyId, Host, Secret, no, Context) of
+import_referring_edge(Opt, AnyId, ObjectId, Context) ->
+    case get_thing(Opt#opt{blobs=no}, AnyId, Context) of
         {ok, Thing} ->
-            import_referring_edge_1(Host, HostOriginal, ObjectId, Thing, Secret, Context);
+            import_referring_edge_1(Opt, ObjectId, Thing, Context);
         {error, no_service} ->
             progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [AnyId]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_referring_edge(Host, HostOriginal, AnyId, ObjectId, Secret, Context);
+            import_referring_edge(Opt, AnyId, ObjectId, Context);
         {error, timeout} ->
             progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [AnyId]), Context),
             timer:sleep(5000),
-            import_referring_edge(Host, HostOriginal, AnyId, ObjectId, Secret, Context);
+            import_referring_edge(Opt, AnyId, ObjectId, Context);
         {error, not_found} ->
             progress(io_lib:format("~w: not found, skipping referring edges", [AnyId]), Context),
             {error, not_found};
@@ -260,15 +279,15 @@ import_referring_edge(Host, HostOriginal, AnyId, ObjectId, Secret, Context) ->
             Error
     end.
 
-import_referring_edge_1(Host, HostOriginal, ObjectId, Thing, Secret, Context) ->
+import_referring_edge_1(Opt, ObjectId, Thing, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(HostOriginal, RscUri, Context) of
+    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
         {ok, RscId} ->
             Edges = filter_on_object(proplists:get_value(<<"edge">>, Thing), ObjectId),
-            Stats1 = import_edges(Host, HostOriginal, RscId, Edges, #stats{}, Context),
-            Stats2 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
-            Stats3 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context),
-            handle_delayed(Stats3#stats.delayed, Host, HostOriginal, Secret, yes, Stats3#stats{delayed=[]}, Context);
+            Stats1 = import_edges(Opt, RscId, Edges, #stats{}, Context),
+            Stats2 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
+            Stats3 = import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context),
+            handle_delayed(Stats3#stats.delayed, Opt, Stats3#stats{delayed=[]}, Context);
         _ ->
             ok
     end.
@@ -284,25 +303,25 @@ filter_on_object(Edges, ObjectId) ->
                  Edges).
 
 
-do_import(Host, HostOriginal, undefined, To, Secret, Blobs, Context) ->
-    do_import(Host, HostOriginal, 1, To, Secret, Blobs, Context);
-do_import(Host, HostOriginal, From, To, Secret, Blobs, Context) ->
-    case test_host(From, Host, Secret, Context) of
+do_import(#opt{from=undefined} = Opt, Context) ->
+    do_import(Opt#opt{from=1}, Context);
+do_import(Opt, Context) ->
+    case test_host(Opt, Context) of
         ok ->
-            start_import(Host, HostOriginal, From, To, Secret, Blobs, Context);
+            start_import(Opt, Context);
         Err ->
             Err
     end.
 
-    start_import(Host, HostOriginal, From, To, Secret, Blobs, Context) ->
+    start_import(Opt, Context) ->
         ContextPruned = z_context:prune_for_async(Context),
         spawn(fun() ->
-                    import_loop(Host, HostOriginal, From, To, Secret, Blobs, #stats{}, ContextPruned)
+                    import_loop(Opt, #stats{}, ContextPruned)
               end),
         ok.
     
-    test_host(From, Host, Secret, Context) ->
-        Url = get_url(From, Host, Secret, no),
+    test_host(Opt, Context) ->
+        Url = get_url(Opt#opt.from, Opt#opt{blobs=no}),
         progress(io_lib:format("TEST HOST: pinging ~p ...", [Url]), Context),
         case get_request(get, Url) of
             {ok, {{_, 200, _},Hs, _}} ->
@@ -350,8 +369,8 @@ do_import(Host, HostOriginal, From, To, Secret, Blobs, Context) ->
         end.
 
 
-get_url(Id, Host, Secret, Blobs) ->
-    "http://"++Host++"/thing/"++integer_to_list(Id)++"/json?secret="++Secret++blobs_arg(Blobs).
+get_url(Id, Opt) ->
+    "http://"++Opt#opt.host++"/thing/"++integer_to_list(Id)++"/json?secret="++Opt#opt.secret++blobs_arg(Opt#opt.blobs).
 
 blobs_arg(edgesonly) -> "&skip-blob=1";
 blobs_arg(tagsonly) -> "&skip-blob=1";
@@ -359,8 +378,8 @@ blobs_arg(no) -> "&skip-blob=1";
 blobs_arg(yes) -> "";
 blobs_arg(blobsonly) -> "".
 
-get_thing(Id, Hostname, Secret, Blobs, Context) ->
-    Url = get_url(Id, Hostname, Secret, Blobs),
+get_thing(Opt, Id, Context) ->
+    Url = get_url(Id, Opt),
     case get_request(get, Url) of
         {ok, {
             {_HTTP, 200, _OK},
@@ -403,73 +422,79 @@ get_request(Method, Url) ->
 
 
 %% @doc Fetch all items from the given host
-import_loop(Host, HostOriginal, _From, undefined, Secret, Blobs, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 500 ->
+import_loop(#opt{to=undefined} = Opt, #stats{consequetive_notfound=NF, delayed=Delayed} = Stats, Context) when NF > 500 ->
     % Signal the end of the import to the UI
     progress("STOP - found more than 500 consequetive not founds.<br/>", Context),
-    handle_delayed(Delayed, Host, HostOriginal, Secret, Blobs, Stats#stats{delayed=[]}, Context);
-import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context) when is_integer(To), From > To ->
+    handle_delayed(Delayed, Opt, Stats#stats{delayed=[]}, Context);
+import_loop(#opt{from=From, to=To} = Opt, Stats, Context) when is_integer(To), From > To ->
     % Signal the end of the import to the UI
     progress(io_lib:format("STOP - At last import anymeta id (~w).<br/>", [To]), Context),
-    handle_delayed(Stats#stats.delayed, Host, HostOriginal, Secret, Blobs, Stats#stats{delayed=[]}, Context);
-import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context) ->
-    import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, 1).
+    handle_delayed(Stats#stats.delayed, Opt, Stats#stats{delayed=[]}, Context);
+import_loop(Opt, Stats, Context) ->
+    import_loop_1(Opt, Stats, Context, 1).
 
 
-import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, Retries) ->
-    progress(io_lib:format("~w: fetching from ~p", [From, Host]), Context),
-    case get_thing(From, Host, Secret, Blobs, Context) of
+import_loop_1(Opt, Stats, Context, Retries) ->
+    progress(io_lib:format("~w: fetching from ~p", [Opt#opt.from, Opt#opt.host]), Context),
+    case get_thing(Opt, Opt#opt.from, Context) of
         {ok, Thing} ->
-            progress(io_lib:format("~w: importing", [From]), Context),
-            Stats1 = import_thing(Host, HostOriginal, From, Thing, Blobs, Stats, Context),
+            progress(io_lib:format("~w: importing", [Opt#opt.from]), Context),
+            Stats1 = import_thing(Opt, Opt#opt.from, Thing, Stats, Context),
             Stats2 = Stats1#stats{
                 found=Stats#stats.found+1, 
                 consequetive_notfound=0
             },
-            import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats2, Context);
+            import_loop(Opt#opt{from=Opt#opt.from+1}, Stats2, Context);
         {error, no_service} ->
-            progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [From]), Context),
+            progress(io_lib:format("~w: got 503 - waiting 10 seconds before retry.", [Opt#opt.from]), Context),
             % Anymeta servers give a 503 when they are overloaded.
             % Sleep for 10 seconds and then retry our request.
             timer:sleep(10000),
-            import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context);
+            import_loop(Opt, Stats, Context);
         {error, timeout} ->
-            progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [From]), Context),
+            progress(io_lib:format("~w: got timeout - waiting 5 seconds before retry.", [Opt#opt.from]), Context),
             timer:sleep(5000),
-            import_loop(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context);
+            import_loop(Opt, Stats, Context);
         {error, not_found} ->
-            progress(io_lib:format("~w: not found, skipping to next", [From]), Context),
+            progress(io_lib:format("~w: not found, skipping to next", [Opt#opt.from]), Context),
             Stats1 = Stats#stats{
                 notfound=Stats#stats.notfound+1, 
                 consequetive_notfound=Stats#stats.consequetive_notfound+1,
-                error=[{From, notfound} | Stats#stats.error]
+                error=[{Opt#opt.from, notfound} | Stats#stats.error]
             },
-            import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats1, Context);
+            import_loop(Opt#opt{from=Opt#opt.from+1}, Stats1, Context);
+        {error, Reason} when Reason =:= gone; Reason =:= unauthorized ->
+            progress(io_lib:format("~w: error, skipping to next (error: ~p)", [Opt#opt.from, Reason]), Context),
+            Stats1 = Stats#stats{
+                error=[{Opt#opt.from, Reason} | Stats#stats.error]
+            },
+            import_loop(Opt#opt{from=Opt#opt.from+1}, Stats1, Context);
         {error, Reason} ->
             case Retries < ?RETRIES of
                 true ->
-                    progress(io_lib:format("~w: error, will retry in 1 second (error: ~p)", [From, Reason]), Context),
+                    progress(io_lib:format("~w: error, will retry in 1 second (error: ~p)", [Opt#opt.from, Reason]), Context),
                     timer:sleep(1000),
-                    import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, Retries+1);
+                    import_loop_1(Opt, Stats, Context, Retries+1);
                 false ->
-                    progress(io_lib:format("~w: error, skipping to next (error: ~p)", [From, Reason]), Context),
+                    progress(io_lib:format("~w: error, skipping to next (error: ~p)", [Opt#opt.from, Reason]), Context),
                     Stats1 = Stats#stats{
-                        error=[{From, Reason} | Stats#stats.error]
+                        error=[{Opt#opt.from, Reason} | Stats#stats.error]
                     },
-                    import_loop(Host, HostOriginal, From+1, To, Secret, Blobs, Stats1, Context)
+                    import_loop(Opt#opt{from=Opt#opt.from+1}, Stats1, Context)
             end
     end.
 
 
-    handle_delayed([], _Host, _HostOriginal, _Secret, _Blobs, #stats{delayed=[]} = Stats, _Context) ->
+    handle_delayed([], _Opt, #stats{delayed=[]} = Stats, _Context) ->
         {ok, Stats};
-    handle_delayed([], Host, HostOriginal, Secret, Blobs, #stats{delayed=Delayed} = Stats, Context) ->
-        handle_delayed(Delayed, Host, HostOriginal, Secret, Blobs, Stats#stats{delayed=[]}, Context);
-    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Host, HostOriginal, Secret, Blobs, Stats, Context) ->
+    handle_delayed([], Opt, #stats{delayed=Delayed} = Stats, Context) ->
+        handle_delayed(Delayed, Opt, Stats#stats{delayed=[]}, Context);
+    handle_delayed([{keyword, RscId, AnymetaId}|Ds], Opt, Stats, Context) ->
         AnyId = z_convert:to_integer(AnymetaId),
-        FoundId = case find_any_id(AnyId, Host, Context) of
+        FoundId = case find_any_id(AnyId, Opt#opt.host, Context) of
                     undefined ->
-                        {ok, Stats1} = import_loop(Host, HostOriginal, AnyId, AnyId, Secret, Blobs, Stats, Context),
-                        find_any_id(AnyId, Host, Context);
+                        {ok, Stats1} = import_loop(Opt#opt{from=AnyId,to=AnyId}, Stats, Context),
+                        find_any_id(AnyId, Opt#opt.host, Context);
                     FndId ->
                         Stats1 = Stats,
                         FndId
@@ -481,39 +506,39 @@ import_loop_1(Host, HostOriginal, From, To, Secret, Blobs, Stats, Context, Retri
             undefined ->
                 progress(io_lib:format("~w: not imported, skipping as keyword of ~w", [AnyId, RscId]), Context)
         end,
-        handle_delayed(Ds, Host, HostOriginal, Secret, Blobs, Stats1, Context).
+        handle_delayed(Ds, Opt, Stats1, Context).
 
 
-import_thing(Host, HostOriginal, _AnymetaId, Thing, tagsonly, Stats, Context) ->
+import_thing(#opt{blobs=tagsonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(HostOriginal, RscUri, Context) of
+    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
         {ok, RscId} ->
-            Stats1 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"keyword">>, Thing), Stats, Context),
-            import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"tag">>, Thing), Stats1, Context);
+            Stats1 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats, Context),
+            import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats1, Context);
         _ ->
             Stats
     end;
-import_thing(Host, HostOriginal, _AnymetaId, Thing, edgesonly, Stats, Context) ->
+import_thing(#opt{blobs=edgesonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(HostOriginal, RscUri, Context) of
+    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
         {ok, RscId} ->
-            Stats1 = import_edges(Host, HostOriginal, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context),
-            Stats2 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
-            import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context);
+            Stats1 = import_edges(Opt, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context),
+            Stats2 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
+            import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats2, Context);
         _ ->
             Stats
     end;
-import_thing(_Host, HostOriginal, AnymetaId, Thing, blobsonly, Stats, Context) ->
+import_thing(#opt{blobs=blobsonly} = Opt, AnymetaId, Thing, Stats, Context) ->
     RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(HostOriginal, RscUri, Context) of
+    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
         {ok, RscId} ->
             maybe_import_file(AnymetaId, RscId, Thing, Stats, Context);
         _ ->
             Stats
     end;
-import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when Blobs =:= no; Blobs =:= yes ->
+import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blobs =:= no; Blobs =:= yes ->
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
-    case skip(Thing) of
+    case skip(Opt, Thing) of
         false ->
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             Rights = proplists:get_value(<<"rights">>, Thing),
@@ -530,7 +555,7 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
                         {anymeta_rsc_uri, proplists:get_value(<<"resource_uri">>, Thing)},
-                        {anymeta_host, Host},
+                        {anymeta_host, Opt#opt.host},
                         {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
                         {rights, Rights},
@@ -540,7 +565,7 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                         |OtherFields
                      ]
                      ++ fetch_authoritative(Thing)
-                     ++ fetch_content_group(Thing, Host, HostOriginal, Context)
+                     ++ fetch_content_group(Opt, Thing, Context)
                      ++ fetch_media(Thing)
                      ++ maybe_set_redirect_uri(Thing, fetch_address(Thing))
                      ++ fetch_name(Thing)
@@ -563,12 +588,12 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
             Fields4 = maybe_add_allday(Fields3, Context),
             FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields4, Context),
 
-            case write_rsc(Host, HostOriginal, AnymetaId, FieldsFinal, Stats, Context) of
+            case write_rsc(Opt#opt.host, Opt#opt.host_original, AnymetaId, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
                     % Import all edges
-                    Stats2 = import_edges(Host, HostOriginal, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
-                    Stats3 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
-                    Stats4 = import_keywords(Host, HostOriginal, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context),
+                    Stats2 = import_edges(Opt, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
+                    Stats3 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
+                    Stats4 = import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context),
                     maybe_add_identity(RscId, proplists:get_value(<<"auth">>, Thing), Context),
                     case Blobs of
                         no -> Stats;
@@ -642,33 +667,38 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                 end
         end.
 
-    skip(Thing) ->
-        case proplists:get_value(<<"lang">>, Thing) of
-            undefined ->
-                true;
-            _ ->
-                case is_empty(proplists:get_value(<<"lang">>, Thing)) of
-                    true ->
+    skip(Opt, Thing) ->
+        case is_authoritative(Thing) or not Opt#opt.is_only_authoritatve of
+            true ->
+                case proplists:get_value(<<"lang">>, Thing) of
+                    undefined ->
                         true;
-                        _ ->
-                        case proplists:get_value(<<"uri">>, Thing) of
-                            <<"javascript:any_action", _/binary>> -> true;
-                            <<"../admin.php", _/binary>> -> true;
-                            _ ->
-                                % TODO: add a callback for skippable kinds
-                                case proplists:get_value(<<"kind">>, Thing) of
-                                    <<"UNKNOWN">> -> true;
-                                    <<"ROLE">> -> true;
-                                    <<"TYPE">> -> false;
-                                    <<"LANGUAGE">> -> true;
-                                    _ -> false
+                    _ ->
+                        case is_empty(proplists:get_value(<<"lang">>, Thing)) of
+                            true ->
+                                true;
+                                _ ->
+                                case proplists:get_value(<<"uri">>, Thing) of
+                                    <<"javascript:any_action", _/binary>> -> true;
+                                    <<"../admin.php", _/binary>> -> true;
+                                    _ ->
+                                        % TODO: add a callback for skippable kinds
+                                        case proplists:get_value(<<"kind">>, Thing) of
+                                            <<"UNKNOWN">> -> true;
+                                            <<"ROLE">> -> true;
+                                            <<"TYPE">> -> false;
+                                            <<"LANGUAGE">> -> true;
+                                            _ -> false
+                                        end
                                 end
                         end
-                end
+                end;
+            false ->
+                true
         end.
 
     fetch_authoritative(Thing) ->
-        case z_convert:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)) of
+        case is_authoritative(Thing) of
             true ->
                 [
                     {is_authoritative, true},
@@ -680,6 +710,9 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                     {uri, proplists:get_value(<<"resource_uri">>, Thing)}
                 ]
         end.
+
+    is_authoritative(Thing) ->
+        z_convert:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)).
 
     fetch_website(undefined) -> 
         undefined;
@@ -702,19 +735,19 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                 []
         end.
 
-    fetch_content_group(Thing, Host, HostOriginal, Context) ->
+    fetch_content_group(Opt, Thing, Context) ->
         case proplists:get_value(<<"theme">>, Thing) of
             none ->
-                [];
+                [{content_group_id, Opt#opt.content_group}];
             undefined ->
-                [];
+                [{content_group_id, Opt#opt.content_group}];
             [AnyId|_] ->
                 % find the content group or create one
                 CurrRscUri = binary_to_list(proplists:get_value(<<"resource_uri">>, Thing)),
                 BaseUri = string:substr(CurrRscUri, 1, string:str(CurrRscUri, "/id/") + 3),
                 RscUri = BaseUri ++ binary_to_list(AnyId),
                 
-                case check_previous_import(HostOriginal, RscUri, Context) of
+                case check_previous_import(Opt#opt.host_original, RscUri, Context) of
                     {ok, ZotonicId} ->
                         [{content_group_id, ZotonicId}];
                     none ->
@@ -724,10 +757,10 @@ import_thing(Host, HostOriginal, AnymetaId, Thing, Blobs, Stats, Context) when B
                             {visible_for, 1},
                             {title, iolist_to_binary(["Content group stub: ",AnyId])},
                             {anymeta_id, AnyId},
-                            {anymeta_host, Host}
+                            {anymeta_host, Opt#opt.host}
                         ],
                         {ok, RscId} = m_rsc:insert(Ps, Context),
-                        register_import_content_group(Host, RscId, z_convert:to_integer(AnyId), RscUri, Context),
+                        register_import_content_group(Opt#opt.host, RscId, z_convert:to_integer(AnyId), RscUri, Context),
                         progress(io_lib:format("    Content group stub for ~p (zotonic id ~w)", [AnyId, RscId]), Context),
                         [{content_group_id, RscId}]
                 end
@@ -1313,20 +1346,20 @@ write_file(AnymetaId, RscId, Filename, Data, Stats, Context) ->
         end.
 
 
-import_edges(_Host, _HostOriginal, _RscId, undefined, Stats, _Context) ->
+import_edges(_Opt, _RscId, undefined, Stats, _Context) ->
     Stats;
-import_edges(_Host, _HostOriginal, _RscId, null, Stats, _Context) ->
+import_edges(_Opt, _RscId, null, Stats, _Context) ->
     Stats;
-import_edges(Host, HostOriginal, RscId, Edges, Stats, Context) when is_list(Edges) ->
+import_edges(Opt, RscId, Edges, Stats, Context) when is_list(Edges) ->
     lists:foldl(fun(Edge, St) ->
-                    import_edge(Host, HostOriginal, RscId, Edge, St, Context)
+                    import_edge(Opt, RscId, Edge, St, Context)
                 end,
                 Stats,
                 Edges).
 
 % TODO: do something with the date on the edge (if any)
 %       especially for events w/ presented_at predicate
-import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
+import_edge(Opt, SubjectId, {struct, Props}, Stats, Context) ->
     {struct, Edge} = proplists:get_value(<<"edge">>, Props),
     Predicate = map_predicate(proplists:get_value(<<"predicate">>, Edge)),
     case Predicate of
@@ -1339,7 +1372,7 @@ import_edge(_Host, HostOriginal, SubjectId, {struct, Props}, Stats, Context) ->
             end,
             ensure_predicate(P1, Context),
             ObjectRscUri = proplists:get_value(<<"object_id">>, Edge),
-            ObjectId = ensure_rsc_uri(HostOriginal, ObjectRscUri, Context),
+            ObjectId = ensure_rsc_uri(Opt#opt.host_original, ObjectRscUri, Context),
             progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
             {ok, EdgeId} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
             case proplists:get_value(<<"order">>, Edge) of
@@ -1427,19 +1460,19 @@ edge_prop_caption(Props) ->
     end.
 
 
-import_keywords(_Host, _HostOriginal, _RscId, undefined, Stats, _Context) ->
+import_keywords(_Opt, _RscId, undefined, Stats, _Context) ->
     Stats;
-import_keywords(_Host, _HostOriginal, _RscId, null, Stats, _Context) ->
+import_keywords(_Opt, _RscId, null, Stats, _Context) ->
     Stats;
-import_keywords(Host, HostOriginal, RscId, KeywordIds, Stats, Context) when is_list(KeywordIds) ->
+import_keywords(Opt, RscId, KeywordIds, Stats, Context) when is_list(KeywordIds) ->
     lists:foldl(fun(KwId, St) ->
-                    import_keyword(Host, HostOriginal, RscId, maybe_integer(KwId), St, Context)
+                    import_keyword(Opt, RscId, maybe_integer(KwId), St, Context)
                 end,
                 Stats,
                 KeywordIds).
     
-    import_keyword(_Host, HostOriginal, SubjectId, KeywordId, Stats, Context) ->
-        case find_any_id(KeywordId, HostOriginal, Context) of
+    import_keyword(Opt, SubjectId, KeywordId, Stats, Context) ->
+        case find_any_id(KeywordId, Opt#opt.host_original, Context) of
             {ok, ZotonicId} ->
                 progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,subject,ZotonicId]), Context),
                 {ok, _} = m_edge:insert(SubjectId, subject, ZotonicId, [no_touch], Context),

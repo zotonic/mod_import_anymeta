@@ -90,6 +90,31 @@
                 </div>
 
                 <div class="form-group row">
+                    <label class="control-label col-md-3" for="end-id">{_ Content Group _}</label>
+                    <div class="col-md-9">
+                        <select class="form-control" name="content-group" id="content-group">
+                            <option></option>
+                            {% for cg in m.hierarchy.content_group.tree_flat %}
+                                <option value="{{ cg.id }}">
+                                    {{ cg.indent }} {{ cg.id.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="help-block">{_ Default content group if no theme defined _}</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-9 col-md-offset-3 checkbox">
+                        <label>
+                            <input type="checkbox" id="only-authoritative" name="only-authoritative" value="1" />
+                            {_ Import only authoritative resources _}
+                        </label>
+                        <p class="help-block">{_ Check this if you want to prevent updating non authoritative resources _}</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
                     <label class="control-label col-md-3" for="sysadmin-pw">{_ Import secret _}</label>
                     <div class="col-md-9">
                         <input type="text" id="sysadmin-pw" name="sysadmin-pw" value="" class="col-lg-2 col-md-2 form-control" />

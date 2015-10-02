@@ -9,6 +9,8 @@
     reimport/5
     ]).
 
+-include("../include/mod_import_anymeta.hrl").
+
 duplicates(Context) ->
     z_db:q("
         create table import_anymeta_duplicates as
@@ -40,23 +42,30 @@ reimport(Host, Secret, Context) ->
                   AnyIds).
 
 reimport(AnyId, Host, HostOriginal, Secret, Context) ->
-    case mod_import_anymeta:import_single(Host, HostOriginal, AnyId, Secret, Context) of
+    Opt = #opt{
+        host=Host,
+        host_original=HostOriginal,
+        secret=Secret,
+        from=AnyId,
+        to=AnyId
+    },
+    case mod_import_anymeta:import_single(Opt, Context) of
         {ok, Thing} ->
             % Import referring edges
-            reimport_referring(AnyId, proplists:get_value(<<"all_incoming">>, Thing), Host, HostOriginal, Secret, Context);
+            reimport_referring(Opt, AnyId, proplists:get_value(<<"all_incoming">>, Thing), Context);
         {error, _} = Error ->
             % Error, skip to next
             Error
     end.
 
-reimport_referring(_ObjectId, [], _Host, _HostOriginal, _Secret, _Context) ->
+reimport_referring(_Opt, _ObjectId, [], _Context) ->
     ok;
-reimport_referring(ObjectId, AnyIds, Host, HostOriginal, Secret, Context) ->
+reimport_referring(Opt, ObjectId, AnyIds, Context) ->
     lists:foreach(fun(AnyId) ->
                     mod_import_anymeta:import_referring_edge(
-                                Host, HostOriginal, 
+                                Opt, 
                                 z_convert:to_integer(AnyId), ObjectId, 
-                                Secret, Context)
+                                Context)
                   end,
                   AnyIds).
 

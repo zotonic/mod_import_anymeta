@@ -5,6 +5,8 @@
     cleanup_kw_tag/3
     ]).
 
+-include("../include/mod_import_anymeta.hrl").
+
 cleanup_tags(Context0) ->
     Context = z_acl:sudo(Context0),
     case m_category:name_to_id(tag, Context) of
@@ -31,6 +33,12 @@ cleanup_tags(Context0) ->
 
 cleanup_kw_tag(Host, Secret, Context0) ->
     Context = z_acl:sudo(Context0),
+    Opt = #opt{
+        host=Host,
+        host_original=Host,
+        secret=Secret,
+        blobs=no
+    },
     case m_category:get_range(keyword, Context) of
         {From, To} ->
             AnyIds = z_db:q("
@@ -42,20 +50,20 @@ cleanup_kw_tag(Host, Secret, Context0) ->
                         [From, To],
                         Context),
             lists:foreach(fun({RscId, AnyId}) ->
-                            cleanup_kw_tag_1(RscId, AnyId, Host, Secret, Context)
+                            cleanup_kw_tag_1(RscId, AnyId, Opt, Context)
                           end,
                           AnyIds);
         Error ->
             Error
     end.
 
-cleanup_kw_tag_1(RscId, AnyId, Host, Secret, Context) ->
+cleanup_kw_tag_1(RscId, AnyId, Opt, Context) ->
     case m_rsc:is_a(RscId, tag, Context) of
         true ->
             io:format("."),
             ok;
         false ->
-            case mod_import_anymeta:get_thing(AnyId, Host, Secret, no, Context) of
+            case mod_import_anymeta:get_thing(Opt, AnyId, Context) of
                 {ok, Thing} ->
                     case proplists:get_value(<<"kind">>, Thing) of
                         <<"TAG">> ->
