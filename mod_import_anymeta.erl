@@ -176,7 +176,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
                 from = From,
                 to = To,
                 blobs = Blobs,
-                is_only_authoritatve = IsOnlyAuthoritative,
+                is_only_authoritative = IsOnlyAuthoritative,
                 content_group = CGId,
                 secret = Secret
             },
@@ -668,7 +668,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         end.
 
     skip(Opt, Thing) ->
-        case is_authoritative(Thing) or not Opt#opt.is_only_authoritatve of
+        case is_authoritative(Thing) or not Opt#opt.is_only_authoritative of
             true ->
                 case proplists:get_value(<<"lang">>, Thing) of
                     undefined ->
