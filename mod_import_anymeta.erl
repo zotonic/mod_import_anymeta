@@ -192,32 +192,47 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
     end.
 
 
-find_any_id(AnyId, Host, Context) when is_binary(AnyId) ->
-    find_any_id(z_convert:to_list(AnyId), Host, Context);
 find_any_id(AnyId, Host, Context) when is_list(AnyId) ->
+    find_any_id(z_convert:to_binary(AnyId), Host, Context);
+find_any_id(AnyId, Host, Context) when is_binary(AnyId) ->
     case z_utils:only_digits(AnyId) of
         true ->
             % anyMeta id
-            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1 and host = $2", [z_convert:to_integer(AnyId), Host], Context) of
+            case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1 and host = $2", 
+                         [z_convert:to_integer(AnyId), Host], 
+                         Context)
+            of
                 undefined -> undefined;
                 RscId -> {ok, RscId}
             end;
         false ->
             % rsc uri or name
-            case m_rsc:name_to_id(AnyId, Context) of
-                {ok, RscId} -> {ok, RscId};
-                {error, _} ->
-                    case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1 and host = $2", [AnyId, Host], Context) of
+            case is_http_uri(AnyId) of
+                true ->
+                    case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [AnyId], Context) of
                         undefined -> undefined;
                         RscId -> {ok, RscId}
+                    end;
+                false ->
+                    case m_rsc:name_to_id(AnyId, Context) of
+                        {ok, RscId} -> {ok, RscId};
+                        {error, _} -> undefined
                     end
             end
     end;
 find_any_id(AnyId, Host, Context) when is_integer(AnyId)->
-    case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1 and host = $2", [z_convert:to_integer(AnyId), Host], Context) of
+    case z_db:q1("select rsc_id from import_anymeta where anymeta_id = $1 and host = $2", 
+                 [z_convert:to_integer(AnyId), Host], 
+                 Context)
+    of
         undefined -> undefined;
         RscId -> {ok, RscId}
     end.
+
+
+is_http_uri(<<"http://", _/binary>>) -> true;
+is_http_uri(<<"https://", _/binary>>) -> true;
+is_http_uri(_) -> false.
 
 
 import_single(Opt, Context) ->
@@ -280,8 +295,8 @@ import_referring_edge(Opt, AnyId, ObjectId, Context) ->
     end.
 
 import_referring_edge_1(Opt, ObjectId, Thing, Context) ->
-    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
+    RscUri = resource_uri(Thing),
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             Edges = filter_on_object(proplists:get_value(<<"edge">>, Thing), ObjectId),
             Stats1 = import_edges(Opt, RscId, Edges, #stats{}, Context),
@@ -367,7 +382,6 @@ do_import(Opt, Context) ->
                 progress(io_lib:format("TEST HOST: FAIL! Unexpected Result<br/>~p", [Result]), Context),
                 {error, unexpected_result}
         end.
-
 
 get_url(Id, Opt) ->
     "http://"++Opt#opt.host++"/thing/"++integer_to_list(Id)++"/json?secret="++Opt#opt.secret++blobs_arg(Opt#opt.blobs).
@@ -510,8 +524,8 @@ import_loop_1(Opt, Stats, Context, Retries) ->
 
 
 import_thing(#opt{blobs=tagsonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
-    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
+    RscUri = resource_uri(Thing),
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             Stats1 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats, Context),
             import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats1, Context);
@@ -519,8 +533,8 @@ import_thing(#opt{blobs=tagsonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
             Stats
     end;
 import_thing(#opt{blobs=edgesonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
-    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
+    RscUri = resource_uri(Thing),
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             Stats1 = import_edges(Opt, RscId, proplists:get_value(<<"edge">>, Thing), Stats, Context),
             Stats2 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats1, Context),
@@ -528,9 +542,9 @@ import_thing(#opt{blobs=edgesonly} = Opt, _AnymetaId, Thing, Stats, Context) ->
         _ ->
             Stats
     end;
-import_thing(#opt{blobs=blobsonly} = Opt, AnymetaId, Thing, Stats, Context) ->
-    RscUri = proplists:get_value(<<"resource_uri">>, Thing),
-    case check_previous_import(Opt#opt.host_original, RscUri, Context) of
+import_thing(#opt{blobs=blobsonly} = _Opt, AnymetaId, Thing, Stats, Context) ->
+    RscUri = resource_uri(Thing),
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             maybe_import_file(AnymetaId, RscId, Thing, Stats, Context);
         _ ->
@@ -538,8 +552,10 @@ import_thing(#opt{blobs=blobsonly} = Opt, AnymetaId, Thing, Stats, Context) ->
     end;
 import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blobs =:= no; Blobs =:= yes ->
     % Check if the <<"lang">> section is available, if so then we had read acces, otherwise skip
-    case skip(Opt, Thing) of
+    case skip(Opt, Thing, Context) of
         false ->
+            maybe_stub_origin(Opt, Thing, Context),
+
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             Rights = proplists:get_value(<<"rights">>, Thing),
             Findable = proplists:get_value(<<"findable">>, Thing),
@@ -554,7 +570,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
             Fields0 = [
                         fix_media_category(convert_category(Thing, Context), Thing),
                         {anymeta_id, AnymetaId},
-                        {anymeta_rsc_uri, proplists:get_value(<<"resource_uri">>, Thing)},
+                        {anymeta_rsc_uri, resource_uri(Thing)},
                         {anymeta_host, Opt#opt.host},
                         {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
@@ -603,7 +619,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                     Stats1
             end;
         true ->
-            % Access was denied, skip this thing
+            % Import was denied, skip this thing
             Stats#stats{error=[{AnymetaId, skipped} | Stats#stats.error]}
     end.
 
@@ -667,7 +683,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                 end
         end.
 
-    skip(Opt, Thing) ->
+    skip(Opt, Thing, Context) ->
         case is_authoritative(Thing) or not Opt#opt.is_only_authoritative of
             true ->
                 case proplists:get_value(<<"lang">>, Thing) of
@@ -694,25 +710,11 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                         end
                 end;
             false ->
+                % If this is a resource with an 'origin' then we must register it.
+                % It should be known on both its origin uri and the resource uri
+                maybe_stub_origin(Opt, Thing, Context),
                 true
         end.
-
-    fetch_authoritative(Thing) ->
-        case is_authoritative(Thing) of
-            true ->
-                [
-                    {is_authoritative, true},
-                    {uri, undefined}
-                ];
-            false ->
-                [
-                    {is_authoritative, false},
-                    {uri, proplists:get_value(<<"resource_uri">>, Thing)}
-                ]
-        end.
-
-    is_authoritative(Thing) ->
-        z_convert:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)).
 
     fetch_website(undefined) -> 
         undefined;
@@ -743,11 +745,11 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                 [{content_group_id, Opt#opt.content_group}];
             [AnyId|_] ->
                 % find the content group or create one
-                CurrRscUri = binary_to_list(proplists:get_value(<<"resource_uri">>, Thing)),
+                CurrRscUri = binary_to_list(resource_uri(Thing)),
                 BaseUri = string:substr(CurrRscUri, 1, string:str(CurrRscUri, "/id/") + 3),
                 RscUri = BaseUri ++ binary_to_list(AnyId),
                 
-                case check_previous_import(Opt#opt.host_original, RscUri, Context) of
+                case check_previous_import(RscUri, Context) of
                     {ok, ZotonicId} ->
                         [{content_group_id, ZotonicId}];
                     none ->
@@ -823,6 +825,129 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         nam_part({<<"decease_city">>, V}, Acc) -> [{decease_city, V}|Acc];
         nam_part({<<"decease_country">>, V}, Acc) -> [{decease_country, V}|Acc];
         nam_part(_, Acc) -> Acc.
+
+
+maybe_stub_origin(Opt, Thing, Context) ->
+    ResourceUri = resource_uri(Thing),
+    case origin_resource_uri(Thing) of
+        ResourceUri ->
+            ok;
+        OriginUri ->
+            % This resource has a local authoritative version and
+            % a non-local authoritative origin.
+            % Ensure that we have a stub for the origin and insert
+            % entries with both the origin and resource uri.
+            HostOriginal = Opt#opt.host_original,
+            AnymetaId = z_convert:to_integer(proplists:get_value(<<"thg_id">>, Thing)),
+            OriginHost = uri_host(OriginUri),
+            PrevOriginId = check_previous_import(OriginUri, Context),
+            PrevRscId = check_previous_import(ResourceUri, Context),
+            case {PrevOriginId, PrevRscId} of
+                {none, none} ->
+                    RscIdNew = ensure_rsc_uri_id(OriginHost, OriginUri, AnymetaId, Context),
+                    register_import(HostOriginal, RscIdNew, AnymetaId, ResourceUri, Context);
+                {none, {ok, RscId}} ->
+                    register_import(OriginHost, RscId, AnymetaId, OriginUri, Context);
+                {{ok, OriginId}, none} ->
+                    register_import(HostOriginal, OriginId, AnymetaId, ResourceUri, Context);
+                {{ok, RscId}, {ok, RscId}} ->
+                    ok;
+                {{ok, OriginId}, {ok, RscId}} ->
+                    % Delete the origin id, move all edges to the rsc id
+                    Incoming = z_db:q("select id, subject_id, predicate_id 
+                                       from edge
+                                       where object_id = $1",
+                                       [RscId],
+                                       Context),
+                    lists:foreach(fun({EdgeId, SubjectId, PredId}) ->
+                                      case m_edge:get_id(SubjectId, PredId, OriginId, Context) of
+                                          undefined ->
+                                            z_db:q("update edge set object_id = $1 where id = $2",
+                                                   [OriginId, EdgeId],
+                                                   Context),
+                                            z_depcache:flush(SubjectId, Context),
+                                            z_edge_log_server:check(Context);
+                                          _ ->
+                                            ok
+                                      end
+                                  end,
+                                  Incoming),
+                    Outgoing = z_db:q("select id, object_id, predicate_id 
+                                       from edge
+                                       where subject_id = $1",
+                                       [RscId],
+                                       Context),
+                    lists:foreach(fun({EdgeId, ObjectId, PredId}) ->
+                                      case m_edge:get_id(OriginId, PredId, ObjectId, Context) of
+                                          undefined ->
+                                            z_db:q("update edge set subject_id = $1 where id = $2",
+                                                   [OriginId, EdgeId],
+                                                   Context),
+                                            z_edge_log_server:check(Context);
+                                          _ ->
+                                            ok
+                                      end
+                                  end,
+                                  Outgoing),
+                    m_rsc:delete(RscId, Context),
+                    z_depcache:flush(OriginId, Context),
+                    register_import(HostOriginal, OriginId, AnymetaId, ResourceUri, Context)
+            end
+    end.
+
+fetch_authoritative(Thing) ->
+    case is_authoritative(Thing) of
+        true ->
+            [
+                {is_authoritative, true},
+                {uri, undefined}
+            ];
+        false ->
+            [
+                {is_authoritative, false},
+                {uri, resource_uri(Thing)}
+            ]
+    end.
+
+is_authoritative(Thing) ->
+    case z_convert:to_bool(proplists:get_value(<<"authoritative">>, Thing, true)) of
+        false ->
+            false;
+        true ->
+            case proplists:get_value(<<"origin">>, Thing) of
+                undefined -> true;
+                null -> true;
+                <<>> -> true;
+                Origin when is_binary(Origin) -> false
+            end
+    end.
+
+uri_host(Uri) ->
+    {_Protocol, Host, _Path, _, _} = mochiweb_util:urlsplit(z_convert:to_list(Uri)),
+    % Hack for a specific conversion with dirty data
+    case z_convert:to_binary(Host) of
+        <<"www.jewishmonument.", _/binary>> -> <<"www.joodsmonument.nl">>;
+        <<"jewishmonument.", _/binary>> -> <<"www.joodsmonument.nl">>;
+        <<"www.joodsmonument.", _/binary>> -> <<"www.joodsmonument.nl">>;
+        <<"joodsmonument.", _/binary>> -> <<"www.joodsmonument.nl">>;
+        HostBin -> HostBin
+    end.
+
+resource_uri(Thing) ->
+    fix_uri(proplists:get_value(<<"resource_uri">>, Thing)).
+
+origin_resource_uri(Thing) ->
+    case fix_uri(proplists:get_value(<<"origin">>, Thing)) of
+        undefined -> resource_uri(Thing);
+        null -> resource_uri(Thing);
+        <<>> -> resource_uri(Thing);
+        Origin when is_binary(Origin) -> Origin
+    end.
+
+fix_uri(<<"http://www.jewishmonument.nl/", Path/binary>>) -> <<"http://www.joodsmonument.nl/", Path/binary>>;
+fix_uri(<<"http://jewishmonument.nl/", Path/binary>>) -> <<"http://www.joodsmonument.nl/", Path/binary>>;
+fix_uri(<<"http://joodsmonument.nl/", Path/binary>>) -> <<"http://www.joodsmonument.nl/", Path/binary>>;
+fix_uri(Uri) -> Uri.
 
 
 map_texts(Lang, Ts) ->
@@ -1144,7 +1269,7 @@ map_language(Code) -> Code.
 write_rsc(_Host, HostOriginal, AnymetaId, Fields, Stats, Context) ->
     RscUri = proplists:get_value(anymeta_rsc_uri, Fields),
     ensure_category(proplists:get_value(category, Fields), Context),
-    case check_previous_import(HostOriginal, RscUri, Context) of
+    case check_previous_import(RscUri, Context) of
         {ok, RscId} ->
             Fields1 = case m_rsc:get(proplists:get_value(name, Fields), Context) of
                           undefined -> Fields;
@@ -1207,74 +1332,94 @@ write_rsc(_Host, HostOriginal, AnymetaId, Fields, Stats, Context) ->
         end.
 
 
-    check_previous_import(Host, RscUri, Context) ->
-        case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1 and host = $2", [RscUri, Host], Context) of
-            undefined ->
-                none;
-            RscId -> 
-                {ok, RscId}
-        end.
+check_previous_import(RscUri, Context) ->
+    case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [RscUri], Context) of
+        undefined ->
+            none;
+        RscId -> 
+            {ok, RscId}
+    end.
 
-    register_import(Host, RscId, undefined, RscUri, Context) ->
-        % Used for stubs
-        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
-                values ($1, $2, NULL, $3, true, now())",
-               [RscUri, RscId, Host],
-               Context);
-    register_import(Host, RscId, AnymetaId, RscUri, Context) ->
-        % Used for the resource import
-        z_db:q("delete from import_anymeta 
-                where stub = true and host = $1 and rsc_uri = $2",
-               [Host, RscUri],
-               Context),
-        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
-                values ($1, $2, $3, $4, false, now())",
-               [RscUri, RscId, AnymetaId, Host],
-               Context).
-               
-    register_import_content_group(Host, RscId, AnymetaId, RscUri, Context) ->
-        z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
-                values ($1, $2, $3, $4, true, now())",
-               [RscUri, RscId, AnymetaId, Host],
-               Context).
+register_import(Host, RscId, undefined, RscUri, Context) ->
+    % Used for edge stubs, the Anymeta id is still unknown
+    z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
+            values ($1, $2, NULL, $3, true, now())",
+           [RscUri, RscId, Host],
+           Context);
+register_import(Host, RscId, AnymetaId, RscUri, Context) ->
+    % Used for the resource import
+    z_db:q("delete from import_anymeta 
+            where stub = true and rsc_uri = $1",
+           [RscUri],
+           Context),
+    z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
+            values ($1, $2, $3, $4, false, now())",
+           [RscUri, RscId, AnymetaId, Host],
+           Context).
+           
+register_import_content_group(Host, RscId, AnymetaId, RscUri, Context) ->
+    z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
+            values ($1, $2, $3, $4, true, now())",
+           [RscUri, RscId, AnymetaId, Host],
+           Context).
 
-    register_import_update(Host, _RscId, AnymetaId, RscUri, Context) ->
-        z_db:q("update import_anymeta set stub = false, anymeta_id = $1
-                where host = $2 and rsc_uri = $3",
-               [AnymetaId, Host, RscUri],
-               Context).
+register_import_update(Host, _RscId, AnymetaId, RscUri, Context) ->
+    z_db:q("update import_anymeta set stub = false, anymeta_id = $1
+            where host = $2 and rsc_uri = $3",
+           [AnymetaId, Host, RscUri],
+           Context).
 
-    check_existing_rsc(undefined, _Context) ->
-        none;
-    check_existing_rsc(Name, Context) ->
-        case z_utils:only_digits(Name) of
-            true  ->
-                numeric;
-            false -> 
-                case m_rsc:name_to_id(Name, Context) of
-                    {ok, _RscId} -> clash;
-                    _ -> none
-                end
-        end.
+check_existing_rsc(undefined, _Context) ->
+    none;
+check_existing_rsc(Name, Context) ->
+    case z_utils:only_digits(Name) of
+        true  ->
+            numeric;
+        false -> 
+            case m_rsc:name_to_id(Name, Context) of
+                {ok, _RscId} -> clash;
+                _ -> none
+            end
+    end.
 
-    ensure_rsc_uri(HostOriginal, RscUri, Context) ->
-        case check_previous_import(HostOriginal, RscUri, Context) of
-            {ok, RscId} ->
-                RscId;
-            none ->
-                Ps = [
-                    {category, other},
-                    {is_published, false},
-                    {visible_for, 1},
-                    {title, iolist_to_binary(["Edge object stub: ",RscUri])},
-                    {anymeta_rsc_uri, RscUri},
-                    {anymeta_host, HostOriginal}
-                ],
-                {ok, RscId} = m_rsc:insert(Ps, Context),
-                register_import(HostOriginal, RscId, undefined, RscUri, Context),
-                progress(io_lib:format("    Edge stub for ~p (zotonic id ~w)", [RscUri, RscId]), Context),
-                RscId
-        end.
+ensure_rsc_uri(HostOriginal, RscUri0, Context) ->
+    RscUri = fix_uri(RscUri0),
+    case check_previous_import(RscUri, Context) of
+        {ok, RscId} ->
+            RscId;
+        none ->
+            Ps = [
+                {category, other},
+                {is_published, false},
+                {visible_for, 1},
+                {title, iolist_to_binary(["Edge object stub: ",RscUri])},
+                {anymeta_rsc_uri, RscUri},
+                {anymeta_host, HostOriginal}
+            ],
+            {ok, RscId} = m_rsc:insert(Ps, Context),
+            register_import(HostOriginal, RscId, undefined, RscUri, Context),
+            progress(io_lib:format("    Edge stub for ~p (zotonic id ~w)", [RscUri, RscId]), Context),
+            RscId
+    end.
+
+ensure_rsc_uri_id(HostOriginal, RscUri, AnymetaId, Context) ->
+    case check_previous_import(RscUri, Context) of
+        {ok, RscId} ->
+            RscId;
+        none ->
+            Ps = [
+                {category, other},
+                {is_published, false},
+                {visible_for, 1},
+                {title, iolist_to_binary(["Stub: ",RscUri])},
+                {anymeta_rsc_uri, RscUri},
+                {anymeta_host, HostOriginal}
+            ],
+            {ok, RscId} = m_rsc:insert(Ps, Context),
+            register_import(HostOriginal, RscId, AnymetaId, RscUri, Context),
+            progress(io_lib:format("    Stub for ~p (zotonic id ~w)", [RscUri, RscId]), Context),
+            RscId
+    end.
 
 
 rsc_update(RscId, Props, Context) ->
