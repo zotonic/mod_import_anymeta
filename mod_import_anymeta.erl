@@ -575,8 +575,8 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                         {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
                         {rights, Rights},
-                        {is_findable, z_convert:to_bool(Findable)},
-                        {is_matchable, z_convert:to_bool(Matchable)},
+                        {is_unfindable, not (       z_convert:to_bool(Findable) 
+                                            andalso z_convert:to_bool(Matchable))},
                         {alternative_uris, proplists:get_value(<<"alt_uri">>, Thing)}
                         |OtherFields
                      ]
@@ -619,8 +619,16 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                     Stats1
             end;
         true ->
-            % Import was denied, skip this thing
-            Stats#stats{error=[{AnymetaId, skipped} | Stats#stats.error]}
+            % Import was denied, skip this thing but import outgoing edges
+            Stats1 = Stats#stats{error=[{AnymetaId, skipped} | Stats#stats.error]},
+            case check_previous_import(resource_uri(Thing), Context) of
+                {ok, RscId} ->
+                    Stats2 = import_edges(Opt, RscId, proplists:get_value(<<"edge">>, Thing), Stats1, Context),
+                    Stats3 = import_keywords(Opt, RscId, proplists:get_value(<<"keyword">>, Thing), Stats2, Context),
+                    import_keywords(Opt, RscId, proplists:get_value(<<"tag">>, Thing), Stats3, Context);
+                none ->
+                    Stats1
+            end
     end.
 
     maybe_add_allday(Fields, Context) ->
