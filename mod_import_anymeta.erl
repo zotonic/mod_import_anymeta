@@ -746,6 +746,20 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         end.
 
     fetch_content_group(Opt, Thing, Context) ->
+        {<<"trust">>, Trust} = proplists:lookup(<<"trust">>, Thing),
+        {<<"view">>, View} = proplists:lookup(<<"view">>, Trust),
+        case proplists:get_value(<<"level">>, View) of
+            <<"ME">> ->
+                [{content_group, private_content_group}];
+            <<"PREDICATE">> ->
+                [{content_group, member_content_group}];
+            <<"MEMBERS">> ->
+                [{content_group, member_content_group}];
+            _ ->
+                fetch_content_group_theme(Opt, Thing, Context)
+        end.
+
+    fetch_content_group_theme(Opt, Thing, Context) ->
         case proplists:get_value(<<"theme">>, Thing) of
             none ->
                 [{content_group_id, Opt#opt.content_group}];
