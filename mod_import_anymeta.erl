@@ -575,8 +575,9 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                         {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
                         {rights, Rights},
-                        {is_unfindable, not (       z_convert:to_bool(Findable) 
-                                            andalso z_convert:to_bool(Matchable))},
+                        {is_unfindable, not z_convert:to_bool(Findable)},
+                        % {is_unfindable, not (       z_convert:to_bool(Findable) 
+                        %                     andalso z_convert:to_bool(Matchable))},
                         {alternative_uris, proplists:get_value(<<"alt_uri">>, Thing)}
                         |OtherFields
                      ]
