@@ -1334,32 +1334,56 @@ write_rsc(_Host, HostOriginal, AnymetaId, Fields, Stats, Context) ->
             {ok, RscId, Stats}
     end.
 
-    ensure_category(Category, Context) ->
-        case m_category:name_to_id(Category, Context) of
-            {ok, _Id} ->
-                ok;
-            {error, _} ->
-                progress(io_lib:format("Insert category ~w", [Category]), Context),
-                m_rsc:insert([
-                        {name, z_convert:to_binary(Category)},
-                        {category, category},
-                        {title, z_convert:to_binary(Category)}
-                    ], Context)
-        end.
+ensure_category(Category, Context) ->
+    case m_category:name_to_id(Category, Context) of
+        {ok, _Id} ->
+            ok;
+        {error, _} ->
+            progress(io_lib:format("Insert category ~w", [Category]), Context),
+            Name = z_string:to_name(z_convert:to_binary(Category)),
+            maybe_move_named_rsc(Name, category, Context),
+            m_rsc:insert([
+                    {name, Name},
+                    {category, category},
+                    {title, z_convert:to_binary(Category)}
+                ], Context)
+    end.
 
-    ensure_predicate(Predicate, Context) ->
-        case m_predicate:name_to_id(Predicate, Context) of
-            {ok, _Id} ->
-                ok;
-            {error, _} ->
-                m_rsc:insert([
-                        {name, z_convert:to_binary(Predicate)},
-                        {category, predicate},
-                        {title, z_convert:to_binary(Predicate)}
-                    ], Context),
-                z_depcache:flush(Context)
-        end.
+ensure_predicate(Predicate, Context) ->
+    case m_predicate:name_to_id(Predicate, Context) of
+        {ok, _Id} ->
+            ok;
+        {error, _} ->
+            Name = z_string:to_name(z_convert:to_binary(Predicate)),
+            maybe_move_named_rsc(Name, predicate, Context),
+            m_rsc:insert([
+                    {name, Name},
+                    {category, predicate},
+                    {title, z_convert:to_binary(Predicate)}
+                ], Context),
+            z_depcache:flush(Context)
+    end.
 
+maybe_move_named_rsc(Name, Cat, Context) ->
+    case m_rsc:rid(Name, Context) of
+        undefined ->
+            ok;
+        Id ->
+            case m_rsc:is_a(Id, meta, Context) of
+                true ->
+                    lager:error("Resource ~p with name '~s' is in the way of the ~p",
+                                [Id, Name, Cat]);
+                false ->
+                    CatId = m_rsc:p_no_acl(Id, category_id, Context),
+                    Name1 = iolist_to_binary([
+                                m_rsc:p_no_acl(CatId, name, Context),
+                                "_",
+                                Name]),
+                    lager:info("Renaming resource ~p to '~s' to make way for ~p",
+                                [Id, Name1, Cat]),
+                    m_rsc:update(Id, [{name, Name1}], [no_touch], Context)
+            end
+    end.
 
 check_previous_import(RscUri, Context) ->
     case z_db:q1("select rsc_id from import_anymeta where rsc_uri = $1", [RscUri], Context) of
