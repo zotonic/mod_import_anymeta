@@ -582,6 +582,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                      ]
                      ++ fetch_authoritative(Thing)
                      ++ fetch_content_group(Opt, Thing, Context)
+                     ++ fetch_creator_modifier(Opt, Thing, Context)
                      ++ fetch_media(Thing)
                      ++ maybe_set_redirect_uri(Thing, fetch_address(Thing))
                      ++ fetch_name(Thing)
@@ -746,8 +747,8 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         end.
 
     fetch_content_group(Opt, Thing, Context) ->
-        {<<"trust">>, Trust} = proplists:lookup(<<"trust">>, Thing),
-        {<<"view">>, View} = proplists:lookup(<<"view">>, Trust),
+        {<<"trust">>, {struct, Trust}} = proplists:lookup(<<"trust">>, Thing),
+        {<<"view">>, {struct, View}} = proplists:lookup(<<"view">>, Trust),
         case proplists:get_value(<<"level">>, View) of
             <<"ME">> ->
                 [{content_group, private_content_group}];
@@ -1140,6 +1141,12 @@ map_fields([_|T], _Orig, Acc) ->
     map_fields(T, _Orig, Acc).
 
 
+convert_datetime(undefined) ->
+    undefined;
+convert_datetime(null) ->
+    undefined;
+convert_datetime(<<>>) ->
+    undefined;
 convert_datetime(DateTime) ->
     [YMD,HIS] = string:tokens(binary_to_list(DateTime), " "),
     [Y,M,D,H,I,S] = lists:map(fun list_to_integer/1, string:tokens(YMD, "-") ++ string:tokens(HIS, ":")),
@@ -1404,6 +1411,12 @@ check_existing_rsc(Name, Context) ->
             end
     end.
 
+ensure_rsc_uri(_HostOriginal, undefined, _Context) ->
+    undefined;
+ensure_rsc_uri(_HostOriginal, null, _Context) ->
+    undefined;
+ensure_rsc_uri(_HostOriginal, <<>>, _Context) ->
+    undefined;
 ensure_rsc_uri(HostOriginal, RscUri0, Context) ->
     RscUri = fix_uri(RscUri0),
     case check_previous_import(RscUri, Context) of
@@ -1512,6 +1525,24 @@ write_file(AnymetaId, RscId, Filename, Data, Stats, Context) ->
             _ -> true
         end.
 
+fetch_creator_modifier(Opt, Thing, Context) ->
+    [
+        {creator_id, fetch_uri_id([<<"owner_id">>, <<"creator_id">>], Opt, Thing, Context)},
+        {modifier_id, fetch_uri_id([<<"modifier_id">>], Opt, Thing, Context)}
+    ].
+
+fetch_uri_id([], _Opt, _Thing, _Context) ->
+    undefined;
+fetch_uri_id([Prop|Ps], Opt, Thing, Context) ->
+    case proplists:get_value(Prop, Thing) of
+        null -> fetch_uri_id(Ps, Opt, Thing, Context);
+        undefined -> fetch_uri_id(Ps, Opt, Thing, Context);
+        <<>> -> fetch_uri_id(Ps, Opt, Thing, Context);
+        Url ->
+            % Url is always the non-informational uri of the resource
+            ensure_rsc_uri(Opt#opt.host_original, Url, Context)
+    end.
+
 
 import_edges(_Opt, _RscId, undefined, Stats, _Context) ->
     Stats;
@@ -1540,14 +1571,23 @@ import_edge(Opt, SubjectId, {struct, Props}, Stats, Context) ->
             ensure_predicate(P1, Context),
             ObjectRscUri = proplists:get_value(<<"object_id">>, Edge),
             ObjectId = ensure_rsc_uri(Opt#opt.host_original, ObjectRscUri, Context),
-            progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
-            {ok, EdgeId} = m_edge:insert(SubjectId, P1, ObjectId, [no_touch], Context),
-            case proplists:get_value(<<"order">>, Edge) of
-                <<"9999">> ->
-                    nop; %% default
-                OrderBin ->
-                    z_db:update(edge, EdgeId, [{seq, z_convert:to_integer(OrderBin)}], Context)
+            CreatorRscUri = proplists:get_value(<<"creator_id">>, Edge),
+            CreatorId = ensure_rsc_uri(Opt#opt.host_original, CreatorRscUri, Context),
+            Created = convert_datetime(proplists:get_value(<<"modify_date">>, Edge)),
+            Seq = case proplists:get_value(<<"order">>, Edge) of
+                <<"9999">> -> 1000000;
+                OrderBin -> z_convert:to_integer(OrderBin)
             end,
+            progress(io_lib:format("    Edge ~w -[~p]-> ~w", [SubjectId,P1,ObjectId]), Context),
+            {ok, EdgeId} = m_edge:insert(
+                                    SubjectId, P1, ObjectId, 
+                                    [
+                                        no_touch,
+                                        {seq, Seq},
+                                        {created, Created},
+                                        {creator_id, CreatorId}
+                                    ],
+                                    Context),
             case edge_props(Edge) of
                 [] ->
                     z_db:q("delete from import_anymeta_edge where id = $1",
