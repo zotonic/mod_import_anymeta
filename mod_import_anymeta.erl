@@ -559,7 +559,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
             Rights = proplists:get_value(<<"rights">>, Thing),
             Findable = proplists:get_value(<<"findable">>, Thing),
-            Matchable = proplists:get_value(<<"matchable">>, Thing),
+            % Matchable = proplists:get_value(<<"matchable">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
             Texts2 = group_by_lang(Texts1),
             Websites = proplists:get_value(website, Texts2),
@@ -603,7 +603,10 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
             Fields1 = fix_html_summary(map_sections(Fields)),
             Fields2 = convert_query(Fields1, Thing, Context),
             Fields3 = fix_rsc_name(Fields2),
-            Fields4 = maybe_add_allday(Fields3, Context),
+            Fields4 = fix_timezone_props(
+                            maybe_add_date_end(
+                                maybe_add_allday(Fields3, Context),
+                                Context)),
             FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields4, Context),
 
             case write_rsc(Opt#opt.host, Opt#opt.host_original, AnymetaId, FieldsFinal, Stats, Context) of
@@ -640,6 +643,39 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                 [{date_is_all_day, true} | Fields];
             false ->
                 Fields
+        end.
+
+    maybe_add_date_end(Fields, Context) ->
+        case proplists:get_value(date_is_all_day, Fields) of
+            true ->
+                Fields;
+            false ->
+                Cat = proplists:get_value(category, Fields),
+                case lists:member(event, m_category:is_a(Cat, Context)) of
+                    true ->
+                        DateStart = proplists:get_value(date_start, Fields),
+                        DateEnd = proplists:get_value(date_end, Fields),
+                        {DateEnd1,DateIsAllDay} = case {DateStart, DateEnd} of
+                            {{{_,_,_} = YMD,{0,0,0}}, ?ST_JUTTEMIS} ->
+                                {{YMD,{23,59,59}}, true};
+                            {{{_,_,_},_} = DT, ?ST_JUTTEMIS} ->
+                                {z_datetime:next_hour(DT), false};
+                            {{{_,_,_} = YMD,{0,0,0}}, undefined} ->
+                                {{YMD,{23,59,59}}, true};
+                            {{{_,_,_},_} = DT, undefined} ->
+                                {z_datetime:next_hour(DT), false};
+                            _ ->
+                                {DateEnd, false}
+                        end,
+                        [
+                            {date_is_all_day, DateIsAllDay},
+                            {date_end, DateEnd1} 
+                            | proplists:delete(date_end, 
+                                proplists:delete(date_is_all_day, Fields))
+                        ];
+                    false ->
+                        Fields
+                end
         end.
 
     maybe_add_identity(1, _, _Context) ->
@@ -1201,13 +1237,31 @@ fix_pubstart(Props) ->
         _ -> Props
     end.
     
-    fix_pubstart1(Props) ->
-        case proplists:get_value(created, Props) of
-            undefined -> 
-                Props;
-            Created ->
-                [{publication_start, Created} | proplists:delete(publication_start, Props) ]
-        end.
+fix_pubstart1(Props) ->
+    case proplists:get_value(created, Props) of
+        undefined -> 
+            Props;
+        Created ->
+            [{publication_start, Created} | proplists:delete(publication_start, Props) ]
+    end.
+
+fix_timezone_props(Props) ->
+    IsAllDay = z_convert:to_bool(proplists:get_value(date_is_all_day, Props)),
+    [ fix_timezone_prop(Prop, IsAllDay) || Prop <- Props ].
+
+fix_timezone_prop({created, DT}, _)           -> {created, fix_timezone(DT)};
+fix_timezone_prop({modified, DT}, _)          -> {modified, fix_timezone(DT)};
+fix_timezone_prop({date_start, DT}, false)    -> {date_start, fix_timezone(DT)};
+fix_timezone_prop({date_end, DT}, false)      -> {date_end, fix_timezone(DT)};
+fix_timezone_prop({publication_start, DT}, _) -> {publication_start, fix_timezone(DT)};
+fix_timezone_prop({publication_end, DT}, _)   -> {publication_end, fix_timezone(DT)};
+fix_timezone_prop({org_pubdate, DT}, _)       -> {org_pubdate, fix_timezone(DT)};
+fix_timezone_prop(P, _) -> P.
+
+fix_timezone(undefined) -> undefined;
+fix_timezone(?ST_JUTTEMIS) -> ?ST_JUTTEMIS;
+fix_timezone({{1970,1,1},{0,0,0}} = DT) -> DT; 
+fix_timezone(Date) -> z_datetime:to_utc(Date, <<"Europe/Berlin">>).
 
 %% @TODO: make this a check if the summary contains HTML (other than <p>)
 %%        If so, then move the body to a block and the summary_html to the body.
@@ -1598,7 +1652,7 @@ import_edge(Opt, SubjectId, {struct, Props}, Stats, Context) ->
             ObjectId = ensure_rsc_uri(Opt#opt.host_original, ObjectRscUri, Context),
             CreatorRscUri = proplists:get_value(<<"creator_id">>, Edge),
             CreatorId = ensure_rsc_uri(Opt#opt.host_original, CreatorRscUri, Context),
-            Created = convert_datetime(proplists:get_value(<<"modify_date">>, Edge)),
+            Created = fix_timezone(convert_datetime(proplists:get_value(<<"modify_date">>, Edge))),
             Seq = case proplists:get_value(<<"order">>, Edge) of
                 <<"9999">> -> 1000000;
                 OrderBin -> z_convert:to_integer(OrderBin)
