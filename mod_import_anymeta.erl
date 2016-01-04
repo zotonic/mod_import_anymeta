@@ -646,7 +646,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         end.
 
     maybe_add_date_end(Fields, Context) ->
-        case proplists:get_value(date_is_all_day, Fields) of
+        case z_convert:to_bool(proplists:get_value(date_is_all_day, Fields)) of
             true ->
                 Fields;
             false ->
