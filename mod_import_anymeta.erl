@@ -1321,7 +1321,7 @@ map_kind_type(<<"LANGUAGE">>, _, _Context) -> language;
 map_kind_type(<<"LISTEDIT">>, _, _Context) -> 'query';
 map_kind_type(<<"LISTPUBLISH">>, _, _Context) -> 'query';
 map_kind_type(<<"LOCATION">>, _, _Context) -> location;
-map_kind_type(<<"NOTE">>, _, _Context) -> comment;
+map_kind_type(<<"NOTE">>, _, _Context) -> remark;
 map_kind_type(<<"PERSON">>, _, _Context) -> person;
 map_kind_type(<<"ROLE">>, _, _Context) -> predicate;
 map_kind_type(<<"SET">>, _, _Context) -> collection;
