@@ -1261,6 +1261,7 @@ fix_timezone_prop(P, _) -> P.
 fix_timezone(undefined) -> undefined;
 fix_timezone(?ST_JUTTEMIS) -> ?ST_JUTTEMIS;
 fix_timezone({{1970,1,1},{0,0,0}} = DT) -> DT; 
+fix_timezone({{0,_,_},_}) -> {{1970,1,1},{0,0,0}}; 
 fix_timezone(Date) -> z_datetime:to_utc(Date, <<"Europe/Berlin">>).
 
 %% @TODO: make this a check if the summary contains HTML (other than <p>)
@@ -1347,6 +1348,8 @@ map_predicate(P) -> z_convert:to_atom(z_string:to_lower(P)).
 
 map_language("jp") -> "ja";
 map_language(<<"jp">>) -> <<"ja">>;
+map_language("x-none") -> "en";
+map_language(<<"x-none">>) -> <<"en">>;
 map_language(Code) -> Code.
 
 
