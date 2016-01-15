@@ -15,6 +15,7 @@
     to :: integer(),
     blobs = yes :: edgesonly | tagsonly | no | yes | blobsonly,
     is_only_authoritative = false :: boolean(),
+    is_skip_deleted = false :: boolean(),
     content_group :: integer(),
     secret :: string()
 }).

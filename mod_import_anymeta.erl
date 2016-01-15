@@ -153,6 +153,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             HostOrg0 = z_string:trim(z_context:get_q("host_original", Context)),
             CGId = z_convert:to_integer(z_context:get_q("content-group", Context)),
             IsOnlyAuthoritative = z_convert:to_bool(z_context:get_q("only-authoritative", Context)),
+            IsSkipDeleted = z_convert:to_bool(z_context:get_q("skip-deleted", Context)),
             Blobs = case z_convert:to_list(z_context:get_q("blobs", Context)) of
                             "e" -> edgesonly;
                             "t" -> tagsonly;
@@ -177,6 +178,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
                 to = To,
                 blobs = Blobs,
                 is_only_authoritative = IsOnlyAuthoritative,
+                is_skip_deleted = IsSkipDeleted,
                 content_group = CGId,
                 secret = Secret
             },
@@ -739,18 +741,25 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                         case is_empty(proplists:get_value(<<"lang">>, Thing)) of
                             true ->
                                 true;
-                                _ ->
-                                case proplists:get_value(<<"uri">>, Thing) of
-                                    <<"javascript:any_action", _/binary>> -> true;
-                                    <<"../admin.php", _/binary>> -> true;
-                                    _ ->
-                                        % TODO: add a callback for skippable kinds
-                                        case proplists:get_value(<<"kind">>, Thing) of
-                                            <<"UNKNOWN">> -> true;
-                                            <<"ROLE">> -> true;
-                                            <<"TYPE">> -> false;
-                                            <<"LANGUAGE">> -> true;
-                                            _ -> false
+                            _ ->
+                                case Opt#opt.is_skip_deleted 
+                                    andalso proplists:get_value(<<"pubstate">>, Thing) == <<"9">>
+                                of
+                                    true ->
+                                        true;
+                                    false ->
+                                        case proplists:get_value(<<"uri">>, Thing) of
+                                            <<"javascript:any_action", _/binary>> -> true;
+                                            <<"../admin.php", _/binary>> -> true;
+                                            _ ->
+                                                % TODO: add a callback for skippable kinds
+                                                case proplists:get_value(<<"kind">>, Thing) of
+                                                    <<"UNKNOWN">> -> true;
+                                                    <<"ROLE">> -> true;
+                                                    <<"TYPE">> -> false;
+                                                    <<"LANGUAGE">> -> true;
+                                                    _ -> false
+                                                end
                                         end
                                 end
                         end

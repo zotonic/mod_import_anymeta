@@ -115,6 +115,16 @@
                 </div>
 
                 <div class="form-group row">
+                    <div class="col-md-9 col-md-offset-3 checkbox">
+                        <label>
+                            <input type="checkbox" id="skip-deleted" name="skip-deleted" value="1" />
+                            {_ Do not import deleted resources  _}
+                        </label>
+                        <p class="help-block">{_ Keep this unchecked to import deleted things as unpublished resources. If checked then deleted things are not imported. _}</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
                     <label class="control-label col-md-3" for="sysadmin-pw">{_ Import secret _}</label>
                     <div class="col-md-9">
                         <input type="text" id="sysadmin-pw" name="sysadmin-pw" value="" class="col-lg-2 col-md-2 form-control" />
