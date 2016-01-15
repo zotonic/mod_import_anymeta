@@ -1826,7 +1826,7 @@ convert_query(Fields, Thing, Context) ->
                                         [],
                                         Types),
                     Cats1 = case Cats of 
-                                [] -> [ map_kind_type(K, [], Context) || K <- Kinds ];
+                                [] -> [ map_kind_type(Kd, [], Context) || Kd <- Kinds ];
                                 _ -> Cats
                            end,
                     Fs = [
@@ -1837,7 +1837,7 @@ convert_query(Fields, Thing, Context) ->
                         case Sort of undefined -> []; _ -> [{"sort", z_convert:to_binary(Sort)}] end
                     ],
                     [ 
-                        {'query', z_string:trim(iolist_to_binary([[K,$=,V,10] || {K,V} <- lists:flatten(Fs)]))},
+                        {'query', z_string:trim(iolist_to_binary([[KQ,$=,V,10] || {KQ,V} <- lists:flatten(Fs)]))},
                         {'query_limit', Limit}
                         | Fields
                     ];
