@@ -4,7 +4,7 @@
     notfound = 0,
     error = [],
     consequetive_notfound = 0,
-    start_time = erlang:timestamp(),
+    start_time = os:timestamp(),
     delayed=[]
 }).
 
