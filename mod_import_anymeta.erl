@@ -888,13 +888,24 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
         nam_part({<<"first">>, V}, Acc) -> [{name_first, V}|Acc];
         nam_part({<<"suffix">>, V}, Acc) -> [{name_suffix, V}|Acc];
         nam_part({<<"prefix">>, V}, Acc) -> [{name_prefix, V}|Acc];
-        nam_part({<<"gender">>, Gender}, Acc) -> [{gender, z_string:to_lower(Gender)}|Acc];
+        nam_part({<<"gender">>, Gender}, Acc) -> [{gender, fix_gender(z_string:to_lower(Gender))}|Acc];
         nam_part({<<"birth_city">>, V}, Acc) -> [{birth_city, V}|Acc];
         nam_part({<<"birth_country">>, V}, Acc) -> [{birth_country, V}|Acc];
         nam_part({<<"decease_city">>, V}, Acc) -> [{decease_city, V}|Acc];
         nam_part({<<"decease_country">>, V}, Acc) -> [{decease_country, V}|Acc];
         nam_part(_, Acc) -> Acc.
 
+fix_gender(<<"v">>) -> <<"f">>;
+fix_gender(<<"f">>) -> <<"f">>;
+fix_gender(<<"m">>) -> <<"m">>;
+fix_gender(<<"?">>) -> <<"?">>;
+fix_gender(<<>>) -> undefined;
+fix_gender(undefined) -> undefined;
+fix_gender(Gender) when is_binary(Gender) ->
+    lager:error("[mod_import_anymeta] Unknown gender ~p", [Gender]),
+    <<"?">>;
+fix_gender(Gender) ->
+    fix_gender(z_convert:to_binary(Gender)).
 
 maybe_stub_origin(Opt, Thing, Context) ->
     ResourceUri = resource_uri(Thing),
@@ -1461,12 +1472,14 @@ check_previous_import(RscUri, Context) ->
     end.
 
 register_import(Host, RscId, undefined, RscUri, Context) ->
+    z_pivot_rsc:pivot_delay(Context),
     % Used for edge stubs, the Anymeta id is still unknown
     z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
             values ($1, $2, NULL, $3, true, now())",
            [RscUri, RscId, Host],
            Context);
 register_import(Host, RscId, AnymetaId, RscUri, Context) ->
+    z_pivot_rsc:pivot_delay(Context),
     % Used for the resource import
     z_db:q("delete from import_anymeta 
             where stub = true and rsc_uri = $1",
@@ -1478,12 +1491,14 @@ register_import(Host, RscId, AnymetaId, RscUri, Context) ->
            Context).
            
 register_import_content_group(Host, RscId, AnymetaId, RscUri, Context) ->
+    z_pivot_rsc:pivot_delay(Context),
     z_db:q("insert into import_anymeta (rsc_uri, rsc_id, anymeta_id, host, stub, imported)
             values ($1, $2, $3, $4, true, now())",
            [RscUri, RscId, AnymetaId, Host],
            Context).
 
 register_import_update(Host, _RscId, AnymetaId, RscUri, Context) ->
+    z_pivot_rsc:pivot_delay(Context),
     z_db:q("update import_anymeta set stub = false, anymeta_id = $1
             where host = $2 and rsc_uri = $3",
            [AnymetaId, Host, RscUri],
