@@ -16,7 +16,8 @@
     blobs = yes :: edgesonly | tagsonly | no | yes | blobsonly,
     is_only_authoritative = false :: boolean(),
     is_skip_deleted = false :: boolean(),
-    content_group :: integer(),
+    content_group :: integer() | undefined,
+    content_group_trust :: integer() | undefined,
     secret :: string()
 }).
 

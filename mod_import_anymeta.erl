@@ -1,9 +1,9 @@
 %% @author Marc Worrell <marc@worrell.nl>
-%% @copyright 2011-2015 Marc Worrell
+%% @copyright 2011-2016 Marc Worrell
 %% @doc Import data from an Anymeta website. Check mod_import_anymeta_dispatch for
 %% redirecting old Anymeta urls to the new imported locations.
 
-%% Copyright 2011-2015 Marc Worrell
+%% Copyright 2011-2016 Marc Worrell
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -152,6 +152,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
             Host     = z_string:trim(z_context:get_q("host", Context)),
             HostOrg0 = z_string:trim(z_context:get_q("host_original", Context)),
             CGId = z_convert:to_integer(z_context:get_q("content-group", Context)),
+            CGTrustId = z_convert:to_integer(z_context:get_q("content-group-trust", Context)),
             IsOnlyAuthoritative = z_convert:to_bool(z_context:get_q("only-authoritative", Context)),
             IsSkipDeleted = z_convert:to_bool(z_context:get_q("skip-deleted", Context)),
             Blobs = case z_convert:to_list(z_context:get_q("blobs", Context)) of
@@ -180,6 +181,7 @@ event(#submit{message=import_anymeta, form=Form}, Context) ->
                 is_only_authoritative = IsOnlyAuthoritative,
                 is_skip_deleted = IsSkipDeleted,
                 content_group = CGId,
+                content_group_trust = CGTrustId,
                 secret = Secret
             },
 
@@ -795,14 +797,20 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
     fetch_content_group(Opt, Thing, Context) ->
         {<<"trust">>, {struct, Trust}} = proplists:lookup(<<"trust">>, Thing),
         {<<"view">>, {struct, View}} = proplists:lookup(<<"view">>, Trust),
-        case proplists:get_value(<<"level">>, View) of
-            <<"ME">> ->
-                [{content_group, private_content_group}];
-            <<"PREDICATE">> ->
-                [{content_group, member_content_group}];
-            <<"MEMBERS">> ->
-                [{content_group, member_content_group}];
-            _ ->
+        case {proplists:get_value(<<"level">>, View), Opt#opt.content_group_trust} of
+            {<<"EVERYONE">>, _} ->
+                fetch_content_group_theme(Opt, Thing, Context);
+            {_, undefined} ->
+                fetch_content_group_theme(Opt, Thing, Context);
+            {<<"ME">>, GroupId} ->
+                [{content_group, GroupId}];
+            {<<"PREDICATE">>, GroupId} ->
+                [{content_group, GroupId}];
+            {<<"MEMBERS">>, GroupId} ->
+                [{content_group, GroupId}];
+            {<<"EVERYONE">>, _} ->
+                fetch_content_group_theme(Opt, Thing, Context);
+            {_Other, _} ->
                 fetch_content_group_theme(Opt, Thing, Context)
         end.
 

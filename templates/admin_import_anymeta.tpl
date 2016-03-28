@@ -105,6 +105,21 @@
                 </div>
 
                 <div class="form-group row">
+                    <label class="control-label col-md-3" for="end-id">{_ Content group for unpublished/trust _}</label>
+                    <div class="col-md-9">
+                        <select class="form-control" name="content-group-trust" id="content-group-trust">
+                            <option></option>
+                            {% for cg in m.hierarchy.content_group.tree_flat %}
+                                <option value="{{ cg.id }}">
+                                    {{ cg.indent }} {{ cg.id.title }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <p class="help-block">{_ (Optional) Content group if the things’s trust is set to non-public. _}</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
                     <div class="col-md-9 col-md-offset-3 checkbox">
                         <label>
                             <input type="checkbox" id="only-authoritative" name="only-authoritative" value="1" />
