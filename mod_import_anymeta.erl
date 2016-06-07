@@ -611,7 +611,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                             maybe_add_date_end(
                                 maybe_add_allday(Fields3, Context),
                                 Context)),
-            FieldsFinal = z_notifier:foldl(import_anymeta_fields, Fields4, Context),
+            FieldsFinal = z_notifier:foldl({import_anymeta_fields, Thing}, Fields4, Context),
 
             case write_rsc(Opt#opt.host, Opt#opt.host_original, AnymetaId, FieldsFinal, Stats, Context) of
                 {ok, RscId, Stats1} ->
