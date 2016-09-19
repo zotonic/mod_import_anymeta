@@ -561,7 +561,13 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
             maybe_stub_origin(Opt, Thing, Context),
 
             {struct, Texts} = proplists:get_value(<<"lang">>, Thing),
-            Rights = proplists:get_value(<<"rights">>, Thing),
+            Rights = case proplists:get_value(<<"rights">>, Thing) of
+                        undefined -> <<"CR">>;
+                        null -> <<"CR">>;
+                        <<>> -> <<"CR">>;
+                        CR -> CR
+                     end,
+            Views = to_integer(proplists:get_value(<<"views">>, Thing)),
             Findable = proplists:get_value(<<"findable">>, Thing),
             % Matchable = proplists:get_value(<<"matchable">>, Thing),
             Texts1 = [ map_texts(map_language(Lang), T) || {Lang, {struct, T}} <- Texts ],
@@ -579,6 +585,7 @@ import_thing(#opt{blobs=Blobs} = Opt, AnymetaId, Thing, Stats, Context) when Blo
                         {anymeta_is_user, proplists:is_defined(<<"auth">>, Thing)},
                         {language, Langs},
                         {rights, Rights},
+                        {anymeta_views, Views},
                         {is_unfindable, not z_convert:to_bool(Findable)},
                         % {is_unfindable, not (       z_convert:to_bool(Findable) 
                         %                     andalso z_convert:to_bool(Matchable))},
@@ -1937,4 +1944,9 @@ ensure_anymeta_type(Context) ->
                               Context)
     end.
 
+
+to_integer(undefined) -> 0;
+to_integer(null) -> 0;
+to_integer(<<>>) -> 0;
+to_integer(Nr) -> z_convert:to_integer(Nr).
 
