@@ -13,6 +13,7 @@ summary2intro(Context0) ->
     io:format("~nChecking ~p resources... ", [length(Ids)]),
     lists:map(
         fun({Id}) ->
+            z_pivot_rsc:pivot_delay(Context),
             case maybe_move_summary(Id, Context) of
                 true -> io:format("x");
                 false -> io:format(".")
