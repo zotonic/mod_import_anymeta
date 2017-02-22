@@ -35,10 +35,14 @@ do_move_summary(Id, Context) ->
     {BlockBody, BlockOther} = case m_rsc:p_no_acl(Id, blocks, Context) of
         undefined -> {[], undefined};
         [] -> {[], undefined};
-        Blocks ->
+        Blocks when is_list(Blocks) ->
             lists:partition(
                 fun(B) -> proplists:get_value(name, B) =:= <<"body">> end, 
-                Blocks)
+                Blocks);
+        FunkyBlocks ->
+            io:format("~nRemoving illegal 'blocks' property in rsc ~p: ~p~n",
+                      [Id, FunkyBlocks]),
+            {[], []}
     end,
     NewBody = case BlockBody of
         [] -> undefined;
