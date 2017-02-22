@@ -26,11 +26,28 @@ summary2intro(Context0) ->
 maybe_move_summary(Id, Context) ->
     SummaryHtml = m_rsc:p_no_acl(Id, summary_html, Context),
     case is_non_p_html(SummaryHtml) of
-        true ->  do_move_summary(Id, Context);
-        false -> false
+        true ->  do_move_summary_body(Id, Context);
+        false -> do_move_summary(Id, SummaryHtml, Context)
     end.
 
-do_move_summary(Id, Context) ->
+do_move_summary(_Id, undefined, _Context) ->
+    false;
+do_move_summary(Id, SummaryHtml, Context) ->
+    case is_empty(SummaryHtml) of
+        true ->
+            false;
+        false ->
+            NewProps = [
+                {summary, z_html:strip(SummaryHtml)},
+                {summary_html, undefined},
+                {introduction_html, strip_class(SummaryHtml)}
+            ],
+            {ok, _} = m_rsc:update(Id, NewProps, [no_touch, {escape_texts, false}], Context),
+            true
+    end.
+
+
+do_move_summary_body(Id, Context) ->
     Body = m_rsc:p_no_acl(Id, body, Context),
     {BlockBody, BlockOther} = case m_rsc:p_no_acl(Id, blocks, Context) of
         undefined -> {[], undefined};
@@ -57,7 +74,6 @@ do_move_summary(Id, Context) ->
         {blocks, BlockOther}
     ],
     {ok, _} = m_rsc:update(Id, NewProps, [no_touch, {escape_texts, false}], Context),
-    io:format("x"),
     true.
 
 
@@ -72,6 +88,10 @@ strip_class({trans, Tr}) ->
 strip_class(Text) when is_binary(Text) ->
     binary:replace(Text, <<"p class=\"summary\"">>, <<"p">>, [global]).
 
+
+is_empty(undefined) -> true;
+is_empty({trans, Trs}) -> not lists:any(fun({_,T}) -> not z_utils:is_empty(T) end, Trs);
+is_empty(A) -> z_utils:is_empty(A).
 
 is_non_p_html(undefined) -> false;
 is_non_p_html(<<>>) -> false;
