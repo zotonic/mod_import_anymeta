@@ -35,6 +35,7 @@ do_move_summary(Id, Context) ->
     {BlockBody, BlockOther} = case m_rsc:p_no_acl(Id, blocks, Context) of
         undefined -> {[], undefined};
         [] -> {[], undefined};
+        {rsc_list, []} -> {[], undefined};
         Blocks when is_list(Blocks) ->
             lists:partition(
                 fun(B) -> proplists:get_value(name, B) =:= <<"body">> end, 
